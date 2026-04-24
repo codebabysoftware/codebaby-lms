@@ -32,7 +32,7 @@ export default function CourseEditor() {
   const handleCreateModule = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://localhost:8000/api/modules/', {
+      const res = await fetch('http://localhost:8000/api/modules/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ export default function CourseEditor() {
     if (notesFile) formData.append('notes_file', notesFile);
 
     try {
-      const res = await fetch(`http://localhost:8000/api/lessons/', {
+      const res = await fetch('http://localhost:8000/api/lessons/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`

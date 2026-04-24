@@ -21,10 +21,10 @@ export default function CourseList() {
     try {
       const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
       
-      const statsRes = await fetch(`http://localhost:8000/api/courses/analytics/', { headers });
+      const statsRes = await fetch('http://localhost:8000/api/courses/analytics/', { headers });
       if (statsRes.ok) setAnalytics(await statsRes.json());
 
-      const coursesRes = await fetch(`http://localhost:8000/api/courses/', { headers });
+      const coursesRes = await fetch('http://localhost:8000/api/courses/', { headers });
       if (coursesRes.ok) setCourses(await coursesRes.json());
       
     } catch (e) {
