@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+db.sqlite3
+
+# Environments
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+venv/
+env/
+ENV/
+
+# Build folders
+frontend/dist/
+frontend/build/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Media uploads (Huge files barricaded from Github)
+backend/media/
