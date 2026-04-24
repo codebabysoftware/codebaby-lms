@@ -16,8 +16,8 @@ export default function AdminHome() {
         
         // Execute parallel requests to capture all angles of the platform
         const [studentRes, courseRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/analytics/', { headers }),
-          fetch(`${import.meta.env.VITE_API_BASE_URL}/courses/analytics/', { headers })
+          fetch(`http://localhost:8000/api/admin/analytics/', { headers }),
+          fetch(`http://localhost:8000/api/courses/analytics/', { headers })
         ]);
 
         if (studentRes.ok && courseRes.ok) {

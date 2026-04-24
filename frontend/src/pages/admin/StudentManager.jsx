@@ -25,10 +25,10 @@ export default function StudentManager() {
     try {
       const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
       
-      const statsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/analytics/', { headers });
+      const statsRes = await fetch(`http://localhost:8000/api/admin/analytics/', { headers });
       if (statsRes.ok) setAnalytics(await statsRes.json());
       
-      const studentsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/students/', { headers });
+      const studentsRes = await fetch(`http://localhost:8000/api/admin/students/', { headers });
       if (studentsRes.ok) setStudents(await studentsRes.json());
     } catch(e) {}
   };
@@ -39,7 +39,7 @@ export default function StudentManager() {
     setMessage('');
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/students/create/', {
+      const res = await fetch(`http://localhost:8000/api/admin/students/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export default function StudentManager() {
     }
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/students/${id}/delete/`, {
+      const res = await fetch(`http://localhost:8000/api/admin/students/${id}/delete/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
       });

@@ -13,7 +13,7 @@ export default function SecureMediaFetcher({ contentId, type, title }) {
       setLoading(true);
       try {
         const endpoint = type === 'video' ? 'download_video' : 'download_notes';
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lessons/${contentId}/${endpoint}/`, {
+        const res = await fetch(`http://localhost:8000/api/lessons/${contentId}/${endpoint}/`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
         });
         

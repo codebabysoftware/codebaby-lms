@@ -27,35 +27,35 @@ export default function AccessManager() {
 
   const fetchStudents = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/students/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
+      const res = await fetch(`http://localhost:8000/api/admin/students/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
       if (res.ok) setStudents(await res.json());
     } catch(e) {}
   };
 
   const fetchCourses = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/courses/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
+      const res = await fetch(`http://localhost:8000/api/courses/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
       if (res.ok) setCourses(await res.json());
     } catch(e) {}
   };
 
   const fetchLessons = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lessons/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
+      const res = await fetch(`http://localhost:8000/api/lessons/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
       if (res.ok) setLessons(await res.json());
     } catch(e) {}
   };
 
   const fetchEnrollments = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/enrollments/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
+      const res = await fetch(`http://localhost:8000/api/enrollments/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
       if (res.ok) setEnrollments(await res.json());
     } catch(e) {}
   };
 
   const fetchLessonAccess = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lesson-access/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
+      const res = await fetch(`http://localhost:8000/api/lesson-access/', { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }});
       if (res.ok) setLessonAccess(await res.json());
     } catch(e) {}
   };
@@ -84,11 +84,11 @@ export default function AccessManager() {
 
       if (activeTab === 'courses') {
         if (selectedCourses.size === 0) { setMessage("Select at least one course."); setLoading(false); return; }
-        endpoint = `${import.meta.env.VITE_API_BASE_URL}/enrollments/bulk_create/';
+        endpoint = `http://localhost:8000/api/enrollments/bulk_create/';
         payload = { students: Array.from(selectedStudents), courses: Array.from(selectedCourses) };
       } else {
         if (selectedLessons.size === 0) { setMessage("Select at least one lesson."); setLoading(false); return; }
-        endpoint = `${import.meta.env.VITE_API_BASE_URL}/lesson-access/bulk_create/';
+        endpoint = `http://localhost:8000/api/lesson-access/bulk_create/';
         payload = { students: Array.from(selectedStudents), lessons: Array.from(selectedLessons) };
       }
 
@@ -124,7 +124,7 @@ export default function AccessManager() {
   const handleRevokeEnrollment = async (id) => {
     if(!window.confirm("Revoke Course enrollment?")) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/enrollments/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } });
+      const res = await fetch(`http://localhost:8000/api/enrollments/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } });
       if(res.ok) fetchEnrollments();
     } catch(e) {}
   };
@@ -132,7 +132,7 @@ export default function AccessManager() {
   const handleRevokeLesson = async (id) => {
     if(!window.confirm("Revoke Lesson access?")) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/lesson-access/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } });
+      const res = await fetch(`http://localhost:8000/api/lesson-access/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } });
       if(res.ok) fetchLessonAccess();
     } catch(e) {}
   };
