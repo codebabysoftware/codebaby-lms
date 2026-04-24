@@ -22,7 +22,7 @@ export default function CourseContentUpload() {
     if (notesFile) formData.append('notes_file', notesFile);
 
     try {
-      const response = await fetch('http://localhost:8000/api/content/', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/content/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`

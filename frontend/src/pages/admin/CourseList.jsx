@@ -21,10 +21,10 @@ export default function CourseList() {
     try {
       const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
       
-      const statsRes = await fetch('http://localhost:8000/api/courses/analytics/', { headers });
+      const statsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/courses/analytics/', { headers });
       if (statsRes.ok) setAnalytics(await statsRes.json());
 
-      const coursesRes = await fetch('http://localhost:8000/api/courses/', { headers });
+      const coursesRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/courses/', { headers });
       if (coursesRes.ok) setCourses(await coursesRes.json());
       
     } catch (e) {
@@ -40,7 +40,7 @@ export default function CourseList() {
     }
 
     try {
-      const res = await fetch(`http://localhost:8000/api/courses/${id}/`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/courses/${id}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
       });

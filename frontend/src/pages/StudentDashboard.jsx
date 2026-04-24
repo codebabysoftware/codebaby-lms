@@ -16,8 +16,8 @@ function StudentLibrary() {
         
         // Parallel Personal Metadata Fetch
         const [statsRes, coursesRes] = await Promise.all([
-          fetch('http://localhost:8000/api/student/analytics/', { headers }),
-          fetch('http://localhost:8000/api/student-courses/', { headers })
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/student/analytics/', { headers }),
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/student-courses/', { headers })
         ]);
 
         if (statsRes.ok && coursesRes.ok) {
