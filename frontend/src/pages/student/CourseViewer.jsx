@@ -34,7 +34,7 @@ export default function CourseViewer() {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/student-courses/${courseId}/`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/student-courses/${courseId}/`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
         });
         if (res.ok) {
@@ -151,7 +151,17 @@ export default function CourseViewer() {
 
             <div style={{ marginBottom: '2rem' }}>
               <h4>Attached Notes</h4>
-              <SecureMediaFetcher contentId={selectedLesson.id} type="notes" title={selectedLesson.title} />
+              {selectedLesson.notes_url ? (
+                <div style={{ marginTop: '1rem' }}>
+                  <a href={selectedLesson.notes_url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none', background: 'var(--accent-color)', color: 'white' }}>
+                    Open Google Drive Notes
+                  </a>
+                </div>
+              ) : (
+                <div style={{ marginTop: '1rem', padding: '1rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                  No notes available.
+                </div>
+              )}
             </div>
             
             {/* Future Performance Check Hook */}

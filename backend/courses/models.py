@@ -26,7 +26,7 @@ class Lesson(models.Model):
     title = models.CharField(max_length=255)
     day_number = models.PositiveIntegerField(default=1)
     bunny_video_id = models.CharField(max_length=255, blank=True, null=True)
-    notes_file = models.FileField(upload_to='lessons/notes/', blank=True, null=True)
+    notes_url = models.URLField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

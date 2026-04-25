@@ -11,14 +11,14 @@ export default function CourseEditor() {
   const [activeModule, setActiveModule] = useState(null);
   const [lessonTitle, setLessonTitle] = useState('');
   const [dayNumber, setDayNumber] = useState(1);
-  const [videoFile, setVideoFile] = useState(null);
-  const [notesFile, setNotesFile] = useState(null);
+  const [bunnyVideoId, setBunnyVideoId] = useState('');
+  const [notesUrl, setNotesUrl] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const fetchCourse = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/courses/${courseId}/`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}/`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
       });
       if (res.ok) setCourse(await res.json());
@@ -32,7 +32,7 @@ export default function CourseEditor() {
   const handleCreateModule = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/modules/', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/modules/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,27 +57,29 @@ export default function CourseEditor() {
     setLoading(true);
     setMessage('');
     
-    const formData = new FormData();
-    formData.append('module', activeModule);
-    formData.append('title', lessonTitle);
-    formData.append('day_number', dayNumber);
-    if (videoFile) formData.append('video_file', videoFile);
-    if (notesFile) formData.append('notes_file', notesFile);
+    const payload = {
+      module: activeModule,
+      title: lessonTitle,
+      day_number: dayNumber,
+      bunny_video_id: bunnyVideoId || null,
+      notes_url: notesUrl || null
+    };
 
     try {
-      const res = await fetch('http://localhost:8000/api/lessons/', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/lessons/`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         },
-        body: formData
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
         setMessage('Lesson added successfully!');
         setLessonTitle('');
-        setVideoFile(null);
-        setNotesFile(null);
+        setBunnyVideoId('');
+        setNotesUrl('');
         setDayNumber(dayNumber + 1);
         fetchCourse();
       } else {
@@ -153,12 +155,12 @@ export default function CourseEditor() {
                 <input type="text" className="input-field" value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} required />
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Video File (Optional)</label>
-                <input type="file" className="input-field" accept="video/mp4" onChange={e => setVideoFile(e.target.files[0])} />
+                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Bunny Stream Video ID (Optional)</label>
+                <input type="text" className="input-field" placeholder="e.g. 1a2b3c4d-5e6f..." value={bunnyVideoId} onChange={e => setBunnyVideoId(e.target.value)} />
               </div>
                <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Notes PDF (Optional)</label>
-                <input type="file" className="input-field" accept="application/pdf" onChange={e => setNotesFile(e.target.files[0])} />
+                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Google Drive Notes URL (Optional)</label>
+                <input type="url" className="input-field" placeholder="https://drive.google.com/..." value={notesUrl} onChange={e => setNotesUrl(e.target.value)} />
               </div>
 
               {message && <div className="error-text" style={{ marginBottom: '1rem', color: message.includes('success') ? 'var(--accent-color)' : 'var(--danger-color)' }}>{message}</div>}

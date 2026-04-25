@@ -2,8 +2,6 @@ from rest_framework import serializers
 from .models import Course, Module, Lesson, LessonAccess, Enrollment
 
 class LessonSerializer(serializers.ModelSerializer):
-    video_file = serializers.FileField(write_only=True, required=False)
-
     class Meta:
         model = Lesson
         fields = '__all__'
@@ -42,7 +40,7 @@ class StudentLessonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ('id', 'title', 'day_number', 'created_at', 'is_unlocked', 'video_url')
+        fields = ('id', 'title', 'day_number', 'created_at', 'is_unlocked', 'video_url', 'notes_url')
 
     def get_is_unlocked(self, obj):
         user = self.context['request'].user
