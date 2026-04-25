@@ -9,6 +9,7 @@ export default function CourseList() {
     total_lessons: 0,
     total_enrollments: 0
   });
+
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
@@ -16,136 +17,429 @@ export default function CourseList() {
     fetchData();
   }, []);
 
+  const authHeader = {
+    Authorization: `Bearer ${localStorage.getItem('access_token')}`
+  };
+
   const fetchData = async () => {
     setLoading(true);
-    try {
-      const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
-      
-      const statsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/analytics/`, { headers });
-      if (statsRes.ok) setAnalytics(await statsRes.json());
 
-      const coursesRes = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/`, { headers });
-      if (coursesRes.ok) setCourses(await coursesRes.json());
-      
-    } catch (e) {
-      setMessage("Failed to load course data.");
+    try {
+      const statsRes = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/analytics/`,
+        { headers: authHeader }
+      );
+
+      if (statsRes.ok) {
+        setAnalytics(await statsRes.json());
+      }
+
+      const coursesRes = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/`,
+        { headers: authHeader }
+      );
+
+      if (coursesRes.ok) {
+        setCourses(await coursesRes.json());
+      }
+    } catch {
+      setMessage('Failed to load course data.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id, title) => {
-    if (!window.confirm(`DANGER: Are you absolutely sure you want to delete "${title}"? This will obliterate the course, all its nested modules, lessons, video files, and permanently destroy all student access records tied to it.`)) {
+    if (
+      !window.confirm(
+        `Delete "${title}"? This will permanently remove course, modules, lessons and enrollments.`
+      )
+    ) {
       return;
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${id}/`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/${id}/`,
+        {
+          method: 'DELETE',
+          headers: authHeader
+        }
+      );
 
       if (res.ok) {
         fetchData();
       } else {
-        setMessage("Failed to execute deletion.");
+        setMessage('Failed to delete course.');
       }
-    } catch(e) {
-      setMessage("Network error during deletion.");
+    } catch {
+      setMessage('Network error during deletion.');
     }
   };
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading Course Data...</div>;
+  if (loading) {
+    return (
+      <div style={{ padding: '2rem', color: '#fff' }}>
+        Loading courses...
+      </div>
+    );
+  }
+
+  const statCard = {
+    background: 'rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(18px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '22px',
+    padding: '1.4rem',
+    boxShadow: '0 20px 45px rgba(0,0,0,0.18)'
+  };
+
+  const mainCard = {
+    background: 'rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(18px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '24px',
+    padding: '1.5rem',
+    boxShadow: '0 20px 45px rgba(0,0,0,0.18)'
+  };
+
+  const button = {
+    border: 'none',
+    padding: '.75rem 1rem',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontWeight: '700',
+    color: '#fff',
+    textDecoration: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
 
   return (
-    <div style={{ marginTop: '2rem' }}>
-      
-      {/* 1. Analytics Dashboard Top Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--accent-color)', marginBottom: '0.25rem' }}>{analytics.total_courses}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Classes Created</p>
+    <div style={{ padding: '1rem' }}>
+      {/* Header */}
+      <div
+        style={{
+          marginBottom: '1.5rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '1rem',
+          flexWrap: 'wrap'
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              color: '#fff',
+              fontSize: '2rem',
+              fontWeight: '800',
+              marginBottom: '.35rem'
+            }}
+          >
+            Course Management
+          </h1>
+
+          <p style={{ color: '#94a3b8' }}>
+            Build, manage and scale your premium courses.
+          </p>
         </div>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--accent-hover)', marginBottom: '0.25rem' }}>{analytics.total_modules}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Modules Mapped</p>
-        </div>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: '#ffb347', marginBottom: '0.25rem' }}>{analytics.total_lessons}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Lessons Uploaded</p>
-        </div>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: '#4caf50', marginBottom: '0.25rem' }}>{analytics.total_enrollments}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Global Enrollments</p>
-        </div>
+
+        <Link
+          to="/admin/courses/create"
+          style={{
+            ...button,
+            background:
+              'linear-gradient(135deg,#3b82f6,#8b5cf6)'
+          }}
+        >
+          + Create Course
+        </Link>
       </div>
 
-      {message && <div className="error-text" style={{ marginBottom: '1rem', color: 'var(--danger-color)' }}>{message}</div>}
+      {/* Analytics */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            'repeat(auto-fit,minmax(220px,1fr))',
+          gap: '1rem',
+          marginBottom: '1.5rem'
+        }}
+      >
+        <StatBox
+          label="Courses"
+          value={analytics.total_courses}
+          color="#3b82f6"
+          style={statCard}
+        />
 
-      {/* 2. Detailed Course Table */}
-      <div className="glass-panel" style={{ overflowX: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3>Curriculum Core</h3>
-          <Link to="/admin/courses/create" className="btn-primary" style={{ width: 'auto', textDecoration: 'none', margin: 0 }}>
-            + Form New Course
-          </Link>
+        <StatBox
+          label="Modules"
+          value={analytics.total_modules}
+          color="#8b5cf6"
+          style={statCard}
+        />
+
+        <StatBox
+          label="Lessons"
+          value={analytics.total_lessons}
+          color="#f59e0b"
+          style={statCard}
+        />
+
+        <StatBox
+          label="Enrollments"
+          value={analytics.total_enrollments}
+          color="#10b981"
+          style={statCard}
+        />
+      </div>
+
+      {/* Error */}
+      {message && (
+        <div
+          style={{
+            marginBottom: '1rem',
+            color: '#f87171',
+            fontWeight: '600'
+          }}
+        >
+          {message}
         </div>
-        
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
-              <th style={{ padding: '0.75rem', fontWeight: 500 }}>Course Title</th>
-              <th style={{ padding: '0.75rem', fontWeight: 500 }}>Complexity</th>
-              <th style={{ padding: '0.75rem', fontWeight: 500 }}>Enrollments</th>
-              <th style={{ padding: '0.75rem', fontWeight: 500 }}>Date Created</th>
-              <th style={{ padding: '0.75rem', fontWeight: 500, textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {courses.length === 0 ? (
-              <tr><td colSpan="5" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No courses structurally defined yet.</td></tr>
-            ) : courses.map(course => {
-              const moduleCount = course.modules?.length || 0;
-              const lessonCount = course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0) || 0;
+      )}
+
+      {/* Courses */}
+      <div style={mainCard}>
+        <h3
+          style={{
+            color: '#fff',
+            marginBottom: '1.25rem',
+            fontSize: '1.2rem'
+          }}
+        >
+          All Courses
+        </h3>
+
+        {courses.length === 0 ? (
+          <div
+            style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: '#94a3b8'
+            }}
+          >
+            No courses available.
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns:
+                'repeat(auto-fit,minmax(320px,1fr))',
+              gap: '1rem'
+            }}
+          >
+            {courses.map((course) => {
+              const moduleCount =
+                course.modules?.length || 0;
+
+              const lessonCount =
+                course.modules?.reduce(
+                  (acc, m) =>
+                    acc +
+                    (m.lessons?.length || 0),
+                  0
+                ) || 0;
 
               return (
-                <tr key={course.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', animation: 'slideUpFadeIn 0.3s ease-out forwards' }}>
-                  <td style={{ padding: '1rem 0.75rem', fontWeight: 'bold' }}>
+                <div
+                  key={course.id}
+                  style={{
+                    background:
+                      'rgba(255,255,255,0.04)',
+                    border:
+                      '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '20px',
+                    padding: '1.25rem'
+                  }}
+                >
+                  <h4
+                    style={{
+                      color: '#fff',
+                      fontSize: '1.1rem',
+                      marginBottom: '.45rem'
+                    }}
+                  >
                     {course.title}
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 'normal' }}>
-                       {course.description?.substring(0, 50)}{course.description?.length > 50 ? '...' : ''}
-                    </div>
-                  </td>
-                  <td style={{ padding: '1rem 0.75rem' }}>
-                    <span style={{ background: 'var(--bg-secondary)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.875rem', marginRight: '0.5rem' }}>
+                  </h4>
+
+                  <p
+                    style={{
+                      color: '#94a3b8',
+                      fontSize: '.9rem',
+                      lineHeight: '1.6',
+                      minHeight: '48px',
+                      marginBottom: '1rem'
+                    }}
+                  >
+                    {course.description ||
+                      'No description added.'}
+                  </p>
+
+                  {/* Tags */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '.5rem',
+                      marginBottom: '1rem'
+                    }}
+                  >
+                    <Tag>
                       {moduleCount} Modules
+                    </Tag>
+
+                    <Tag>
+                      {lessonCount} Lessons
+                    </Tag>
+
+                    <Tag green>
+                      {course.enrollment_count}{' '}
+                      Students
+                    </Tag>
+                  </div>
+
+                  {/* Footer */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent:
+                        'space-between',
+                      alignItems: 'center',
+                      gap: '.8rem',
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: '#64748b',
+                        fontSize: '.82rem'
+                      }}
+                    >
+                      {new Date(
+                        course.created_at
+                      ).toLocaleDateString()}
                     </span>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                       {lessonCount} Lessons
-                    </span>
-                  </td>
-                  <td style={{ padding: '1rem 0.75rem', color: 'var(--accent-hover)', fontWeight: 'bold' }}>
-                    {course.enrollment_count} Students
-                  </td>
-                  <td style={{ padding: '1rem 0.75rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                    {new Date(course.created_at).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '1rem 0.75rem', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <Link to={`/admin/courses/${course.id}/edit`} className="btn-primary" style={{ textDecoration: 'none', padding: '0.25rem 0.75rem', margin: 0, width: 'auto', fontSize: '0.875rem' }}>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '.6rem',
+                        flexWrap: 'wrap'
+                      }}
+                    >
+                      <Link
+                        to={`/admin/courses/${course.id}/edit`}
+                        style={{
+                          ...button,
+                          padding:
+                            '.65rem .95rem',
+                          fontSize: '.9rem',
+                          background:
+                            'linear-gradient(135deg,#3b82f6,#8b5cf6)'
+                        }}
+                      >
                         Builder
                       </Link>
-                      <button onClick={() => handleDelete(course.id, course.title)} className="btn-primary" style={{ padding: '0.25rem 0.75rem', margin: 0, width: 'auto', fontSize: '0.875rem', background: 'var(--danger-color)' }}>
-                        Destruct
+
+                      <button
+                        onClick={() =>
+                          handleDelete(
+                            course.id,
+                            course.title
+                          )
+                        }
+                        style={{
+                          ...button,
+                          padding:
+                            '.65rem .95rem',
+                          fontSize: '.9rem',
+                          background:
+                            'linear-gradient(135deg,#ef4444,#dc2626)'
+                        }}
+                      >
+                        Delete
                       </button>
                     </div>
-                  </td>
-                </tr>
-              )
+                  </div>
+                </div>
+              );
             })}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function StatBox({
+  label,
+  value,
+  color,
+  style
+}) {
+  return (
+    <div style={style}>
+      <div
+        style={{
+          width: '42px',
+          height: '4px',
+          borderRadius: '10px',
+          background: color,
+          marginBottom: '1rem'
+        }}
+      />
+
+      <h2
+        style={{
+          color: '#fff',
+          fontSize: '2rem',
+          marginBottom: '.35rem'
+        }}
+      >
+        {value}
+      </h2>
+
+      <p
+        style={{
+          color: '#94a3b8',
+          fontSize: '.85rem',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          fontWeight: '700'
+        }}
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function Tag({ children, green }) {
+  return (
+    <span
+      style={{
+        padding: '.45rem .7rem',
+        borderRadius: '999px',
+        fontSize: '.8rem',
+        fontWeight: '700',
+        color: green ? '#10b981' : '#cbd5e1',
+        background: 'rgba(255,255,255,0.06)'
+      }}
+    >
+      {children}
+    </span>
   );
 }

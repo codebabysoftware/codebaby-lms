@@ -4,174 +4,604 @@ import SecureMediaFetcher from './SecureMediaFetcher';
 
 export default function CourseViewer() {
   const { courseId } = useParams();
+  const navigate = useNavigate();
+
   const [course, setCourse] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [openModules, setOpenModules] = useState({});
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // SECURITY DETERRENCE MOUNT
     const preventContextMenu = (e) => e.preventDefault();
+
     const preventCopy = (e) => {
-      // Prevent Ctrl+C, Ctrl+P, Windows Key + Shift + S, etc.
       if (
-        (e.ctrlKey && ['c', 'p', 's'].includes(e.key.toLowerCase())) ||
-        (e.metaKey && ['c', 'p', 's'].includes(e.key.toLowerCase()))
+        (e.ctrlKey &&
+          ['c', 'p', 's'].includes(
+            e.key.toLowerCase()
+          )) ||
+        (e.metaKey &&
+          ['c', 'p', 's'].includes(
+            e.key.toLowerCase()
+          ))
       ) {
         e.preventDefault();
       }
     };
-    
-    document.addEventListener('contextmenu', preventContextMenu);
-    document.addEventListener('keydown', preventCopy);
+
+    document.addEventListener(
+      'contextmenu',
+      preventContextMenu
+    );
+    document.addEventListener(
+      'keydown',
+      preventCopy
+    );
 
     return () => {
-      document.removeEventListener('contextmenu', preventContextMenu);
-      document.removeEventListener('keydown', preventCopy);
+      document.removeEventListener(
+        'contextmenu',
+        preventContextMenu
+      );
+      document.removeEventListener(
+        'keydown',
+        preventCopy
+      );
     };
   }, []);
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/student-courses/${courseId}/`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/student-courses/${courseId}/`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem(
+                'access_token'
+              )}`
+            }
+          }
+        );
+
         if (res.ok) {
           const data = await res.json();
+
           if (!data.is_unlocked_overall) {
-            navigate('/student'); // kick out if locked completely
+            navigate('/student');
           } else {
             setCourse(data);
           }
         }
-      } catch (err) {}
+      } catch { }
     };
+
     fetchCourse();
   }, [courseId, navigate]);
 
   const toggleModule = (modId) => {
-    setOpenModules(prev => ({ ...prev, [modId]: !prev[modId] }));
+    setOpenModules((prev) => ({
+      ...prev,
+      [modId]: !prev[modId]
+    }));
   };
 
   const handleLessonSelect = (lesson) => {
     if (lesson.is_unlocked) {
       setSelectedLesson(lesson);
     } else {
-      alert("You do not have access to this lesson yet.");
+      alert(
+        'You do not have access to this lesson yet.'
+      );
     }
   };
 
-  if (!course) return <div style={{ padding: '2rem' }}>Loading course...</div>;
+  if (!course) {
+    return (
+      <div
+        style={{
+          padding: '2rem',
+          color: '#fff'
+        }}
+      >
+        Loading course...
+      </div>
+    );
+  }
+
+  const glass = {
+    background: 'rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(18px)',
+    border:
+      '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '22px',
+    boxShadow:
+      '0 20px 45px rgba(0,0,0,0.18)'
+  };
+
+  const button = {
+    border: 'none',
+    padding: '.85rem 1rem',
+    borderRadius: '14px',
+    cursor: 'pointer',
+    fontWeight: '700',
+    color: '#fff'
+  };
 
   return (
-    <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem', height: 'calc(100vh - 150px)' }}>
-      {/* Sidebar for Modules & Lessons API */}
-      <div className="glass-panel" style={{ width: '300px', overflowY: 'auto', padding: '1rem' }}>
-        <h3 style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem' }}>Syllabus</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {course.modules?.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>No content available.</p> : (
-            course.modules.map((module) => (
-              <div key={module.id} style={{ border: '1px solid var(--glass-border)', borderRadius: '6px', overflow: 'hidden' }}>
-                <button 
-                  onClick={() => toggleModule(module.id)}
-                  style={{ width: '100%', padding: '0.75rem 1rem', background: 'var(--bg-secondary)', color: 'white', border: 'none', textAlign: 'left', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns:
+          '320px minmax(0,1fr)',
+        gap: '1.5rem',
+        minHeight: 'calc(100vh - 140px)'
+      }}
+    >
+      {/* Sidebar */}
+      <div
+        style={{
+          ...glass,
+          padding: '1.2rem',
+          overflowY: 'auto'
+        }}
+      >
+        <h2
+          style={{
+            color: '#fff',
+            fontSize: '1.2rem',
+            fontWeight: '800',
+            marginBottom: '1rem'
+          }}
+        >
+          Course Syllabus
+        </h2>
+
+        {course.modules?.length === 0 ? (
+          <p style={{ color: '#94a3b8' }}>
+            No modules available.
+          </p>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '.9rem'
+            }}
+          >
+            {course.modules.map(
+              (module) => (
+                <div
+                  key={module.id}
+                  style={{
+                    border:
+                      '1px solid rgba(255,255,255,0.08)',
+                    borderRadius:
+                      '16px',
+                    overflow:
+                      'hidden',
+                    background:
+                      'rgba(255,255,255,0.03)'
+                  }}
                 >
-                  <span>{module.title}</span>
-                  <span>{openModules[module.id] ? '▼' : '▶'}</span>
-                </button>
-                
-                {openModules[module.id] && (
-                  <div style={{ padding: '0.5rem', background: 'var(--bg-primary)' }}>
-                    {module.lessons?.length === 0 ? <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>No lessons.</p> : (
-                      module.lessons.map(lesson => (
-                         <button 
-                            key={lesson.id} 
-                            onClick={() => handleLessonSelect(lesson)}
-                            style={{ 
-                              width: '100%', 
-                              padding: '0.5rem', 
-                              marginBottom: '0.25rem',
-                              background: selectedLesson?.id === lesson.id ? 'var(--accent-hover)' : 'transparent',
-                              color: lesson.is_unlocked ? 'var(--text-primary)' : 'var(--text-secondary)',
-                              border: 'none', 
-                              textAlign: 'left',
-                              cursor: lesson.is_unlocked ? 'pointer' : 'not-allowed',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              justifyContent: 'space-between'
+                  <button
+                    onClick={() =>
+                      toggleModule(
+                        module.id
+                      )
+                    }
+                    style={{
+                      width: '100%',
+                      border: 'none',
+                      padding:
+                        '1rem',
+                      background:
+                        'rgba(255,255,255,0.05)',
+                      color: '#fff',
+                      fontWeight:
+                        '700',
+                      display:
+                        'flex',
+                      justifyContent:
+                        'space-between',
+                      cursor:
+                        'pointer'
+                    }}
+                  >
+                    <span>
+                      {
+                        module.title
+                      }
+                    </span>
+
+                    <span>
+                      {openModules[
+                        module.id
+                      ]
+                        ? '−'
+                        : '+'}
+                    </span>
+                  </button>
+
+                  {openModules[
+                    module.id
+                  ] && (
+                      <div
+                        style={{
+                          padding:
+                            '.75rem'
+                        }}
+                      >
+                        {module.lessons
+                          ?.length ===
+                          0 ? (
+                          <p
+                            style={{
+                              color:
+                                '#94a3b8',
+                              fontSize:
+                                '.9rem'
                             }}
                           >
-                            <span>Day {lesson.day_number}: {lesson.title}</span>
-                            {!lesson.is_unlocked && <span>🔒</span>}
-                          </button>
-                      ))
+                            No
+                            lessons.
+                          </p>
+                        ) : (
+                          module.lessons.map(
+                            (
+                              lesson
+                            ) => (
+                              <button
+                                key={
+                                  lesson.id
+                                }
+                                onClick={() =>
+                                  handleLessonSelect(
+                                    lesson
+                                  )
+                                }
+                                style={{
+                                  width:
+                                    '100%',
+                                  marginBottom:
+                                    '.55rem',
+                                  border:
+                                    'none',
+                                  padding:
+                                    '.8rem',
+                                  borderRadius:
+                                    '12px',
+                                  textAlign:
+                                    'left',
+                                  cursor:
+                                    lesson.is_unlocked
+                                      ? 'pointer'
+                                      : 'not-allowed',
+                                  background:
+                                    selectedLesson?.id ===
+                                      lesson.id
+                                      ? 'linear-gradient(135deg,#3b82f6,#8b5cf6)'
+                                      : 'rgba(255,255,255,0.04)',
+                                  color:
+                                    lesson.is_unlocked
+                                      ? '#fff'
+                                      : '#64748b',
+                                  fontWeight:
+                                    '600'
+                                }}
+                              >
+                                Day{' '}
+                                {
+                                  lesson.day_number
+                                }
+
+                                :{' '}
+                                {
+                                  lesson.title
+                                }{' '}
+                                {!lesson.is_unlocked &&
+                                  ' 🔒'}
+                              </button>
+                            )
+                          )
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Main View Area */}
-      <div className="glass-panel" style={{ flex: '1', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2>{course.title}</h2>
-          <button onClick={() => navigate('/student')} className="btn-primary" style={{ width: 'auto', margin: 0, background: 'var(--bg-secondary)' }}>Back to Library</button>
-        </div>
-
-        {!selectedLesson ? (
-          <div style={{ flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-            Select an unlocked lesson from the syllabus to start learning.
-          </div>
-        ) : (
-          <div>
-            <h3 style={{ marginBottom: '1rem', color: 'var(--accent-color)' }}>{selectedLesson.title}</h3>
-            
-            <div style={{ marginBottom: '2rem' }}>
-              <h4>Video Lecture</h4>
-              {selectedLesson.video_url ? (
-                <div style={{ marginTop: '1rem', position: 'relative', paddingTop: '56.25%', borderRadius: '8px', overflow: 'hidden', background: '#000' }}>
-                  <iframe 
-                    src={selectedLesson.video_url} 
-                    loading="lazy" 
-                    style={{ border: 0, position: 'absolute', top: 0, height: '100%', width: '100%' }} 
-                    allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" 
-                    allowFullScreen={true}
-                  ></iframe>
                 </div>
-              ) : (
-                <div style={{ marginTop: '1rem', padding: '2rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
-                  No video available for this lesson.
-                </div>
-              )}
-            </div>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <h4>Attached Notes</h4>
-              {selectedLesson.notes_url ? (
-                <div style={{ marginTop: '1rem' }}>
-                  <a href={selectedLesson.notes_url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none', background: 'var(--accent-color)', color: 'white' }}>
-                    Open Google Drive Notes
-                  </a>
-                </div>
-              ) : (
-                <div style={{ marginTop: '1rem', padding: '1rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
-                  No notes available.
-                </div>
-              )}
-            </div>
-            
-            {/* Future Performance Check Hook */}
-            <div style={{ marginTop: '2rem', padding: '1.5rem', border: '1px dashed var(--accent-color)', borderRadius: '8px', textAlign: 'center' }}>
-              <h4 style={{ color: 'var(--text-secondary)' }}>Performance Check Module</h4>
-              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem', color: 'var(--text-secondary)' }}>Diagnostic tests and analyzing tools are currently pending activation for this lesson.</p>
-            </div>
+              )
+            )}
           </div>
         )}
       </div>
+
+      {/* Main Content */}
+      <div
+        style={{
+          ...glass,
+          padding: '1.5rem',
+          overflowY: 'auto'
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent:
+              'space-between',
+            alignItems: 'center',
+            gap: '1rem',
+            flexWrap: 'wrap',
+            marginBottom: '1.2rem'
+          }}
+        >
+          <div>
+            <h1
+              style={{
+                color: '#fff',
+                fontSize:
+                  '1.8rem',
+                fontWeight:
+                  '800',
+                marginBottom:
+                  '.35rem'
+              }}
+            >
+              {course.title}
+            </h1>
+
+            <p
+              style={{
+                color:
+                  '#94a3b8'
+              }}
+            >
+              Premium
+              learning
+              workspace
+            </p>
+          </div>
+
+          <button
+            onClick={() =>
+              navigate(
+                '/student'
+              )
+            }
+            style={{
+              ...button,
+              background:
+                'rgba(255,255,255,0.06)'
+            }}
+          >
+            ← Back
+          </button>
+        </div>
+
+        {!selectedLesson ? (
+          <div
+            style={{
+              minHeight:
+                '420px',
+              display:
+                'flex',
+              alignItems:
+                'center',
+              justifyContent:
+                'center',
+              color:
+                '#94a3b8',
+              textAlign:
+                'center',
+              padding:
+                '2rem'
+            }}
+          >
+            Select an unlocked lesson
+            from the syllabus to start
+            learning.
+          </div>
+        ) : (
+          <div>
+            {/* Lesson Header */}
+            <div
+              style={{
+                marginBottom:
+                  '1.5rem'
+              }}
+            >
+              <span
+                style={{
+                  padding:
+                    '.35rem .65rem',
+                  borderRadius:
+                    '999px',
+                  background:
+                    'rgba(59,130,246,.15)',
+                  color:
+                    '#60a5fa',
+                  fontSize:
+                    '.8rem',
+                  fontWeight:
+                    '700'
+                }}
+              >
+                Day{' '}
+                {
+                  selectedLesson.day_number
+                }
+              </span>
+
+              <h2
+                style={{
+                  color:
+                    '#fff',
+                  fontSize:
+                    '1.5rem',
+                  marginTop:
+                    '.8rem'
+                }}
+              >
+                {
+                  selectedLesson.title
+                }
+              </h2>
+            </div>
+
+            {/* Video */}
+            <section
+              style={{
+                marginBottom:
+                  '2rem'
+              }}
+            >
+              <h3
+                style={{
+                  color:
+                    '#fff',
+                  marginBottom:
+                    '.8rem'
+                }}
+              >
+                Video
+                Lecture
+              </h3>
+
+              {selectedLesson.video_url ? (
+                <div
+                  style={{
+                    position:
+                      'relative',
+                    paddingTop:
+                      '56.25%',
+                    borderRadius:
+                      '18px',
+                    overflow:
+                      'hidden',
+                    background:
+                      '#000'
+                  }}
+                >
+                  <iframe
+                    src={
+                      selectedLesson.video_url
+                    }
+                    loading="lazy"
+                    allowFullScreen
+                    style={{
+                      position:
+                        'absolute',
+                      inset: 0,
+                      width:
+                        '100%',
+                      height:
+                        '100%',
+                      border: 0
+                    }}
+                  />
+                </div>
+              ) : (
+                <EmptyBox text="No video available for this lesson." />
+              )}
+            </section>
+
+            {/* Notes */}
+            <section
+              style={{
+                marginBottom:
+                  '2rem'
+              }}
+            >
+              <h3
+                style={{
+                  color:
+                    '#fff',
+                  marginBottom:
+                    '.8rem'
+                }}
+              >
+                Notes
+              </h3>
+
+              {selectedLesson.notes_url ? (
+                <a
+                  href={
+                    selectedLesson.notes_url
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display:
+                      'inline-flex',
+                    textDecoration:
+                      'none',
+                    ...button,
+                    background:
+                      'linear-gradient(135deg,#3b82f6,#8b5cf6)'
+                  }}
+                >
+                  Open Notes
+                </a>
+              ) : (
+                <EmptyBox text="No notes available." />
+              )}
+            </section>
+
+            {/* Future Hook */}
+            <section
+              style={{
+                padding:
+                  '1.5rem',
+                borderRadius:
+                  '18px',
+                border:
+                  '1px dashed rgba(59,130,246,.45)',
+                background:
+                  'rgba(59,130,246,.05)'
+              }}
+            >
+              <h3
+                style={{
+                  color:
+                    '#fff',
+                  marginBottom:
+                    '.5rem'
+                }}
+              >
+                Performance Check
+              </h3>
+
+              <p
+                style={{
+                  color:
+                    '#94a3b8',
+                  lineHeight:
+                    '1.7'
+                }}
+              >
+                Diagnostic tests and
+                lesson analytics will
+                be activated here in a
+                future release.
+              </p>
+            </section>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmptyBox({ text }) {
+  return (
+    <div
+      style={{
+        padding: '1.25rem',
+        borderRadius: '16px',
+        background:
+          'rgba(255,255,255,0.04)',
+        color: '#94a3b8'
+      }}
+    >
+      {text}
     </div>
   );
 }

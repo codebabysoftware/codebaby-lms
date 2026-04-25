@@ -13,7 +13,7 @@ export default function StudentManager() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  
+
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,47 +21,71 @@ export default function StudentManager() {
     fetchData();
   }, []);
 
+  const authHeader = {
+    Authorization: `Bearer ${localStorage.getItem('access_token')}`
+  };
+
   const fetchData = async () => {
     try {
-      const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
-      
-      const statsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/analytics/`, { headers });
-      if (statsRes.ok) setAnalytics(await statsRes.json());
-      
-      const studentsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/students/`, { headers });
-      if (studentsRes.ok) setStudents(await studentsRes.json());
-    } catch(e) {}
+      const statsRes = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/admin/analytics/`,
+        { headers: authHeader }
+      );
+
+      if (statsRes.ok) {
+        setAnalytics(await statsRes.json());
+      }
+
+      const studentsRes = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/admin/students/`,
+        { headers: authHeader }
+      );
+
+      if (studentsRes.ok) {
+        setStudents(await studentsRes.json());
+      }
+    } catch { }
   };
 
   const handleCreateStudent = async (e) => {
     e.preventDefault();
+
     setLoading(true);
     setMessage('');
-    
+
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/students/create/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({
-          username,
-          password,
-          first_name: firstName,
-          last_name: lastName
-        })
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/admin/students/create/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+          },
+          body: JSON.stringify({
+            username,
+            password,
+            first_name: firstName,
+            last_name: lastName
+          })
+        }
+      );
 
       if (res.ok) {
         setMessage('Student successfully created!');
-        setUsername(''); setPassword(''); setFirstName(''); setLastName('');
+        setUsername('');
+        setPassword('');
+        setFirstName('');
+        setLastName('');
         fetchData();
       } else {
         const errData = await res.json();
-        setMessage('Creation Failed: ' + JSON.stringify(errData));
+        setMessage(
+          'Creation Failed: ' +
+          JSON.stringify(errData)
+        );
       }
-    } catch (err) {
+    } catch {
       setMessage('Network error.');
     } finally {
       setLoading(false);
@@ -69,115 +93,408 @@ export default function StudentManager() {
   };
 
   const handleDelete = async (id, name) => {
-    if(!window.confirm(`DANGER: Are you absolutely sure you want to delete the student "${name}"? This action irreversibly wipes all their historical data, enrollments, and access records.`)) {
+    if (
+      !window.confirm(
+        `Delete student "${name}"? This will permanently remove all data and access records.`
+      )
+    ) {
       return;
     }
-    
+
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/students/${id}/delete/`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/admin/students/${id}/delete/`,
+        {
+          method: 'DELETE',
+          headers: authHeader
+        }
+      );
 
       if (res.ok) {
-        setMessage(`Student "${name}" was permanently deleted.`);
+        setMessage(`Student "${name}" deleted.`);
         fetchData();
       } else {
-        setMessage("Failed to execute deletion protocol.");
+        setMessage('Failed to delete student.');
       }
-    } catch(e) {
-      setMessage("Network error during deletion.");
+    } catch {
+      setMessage('Network error during deletion.');
     }
   };
 
+  const glassCard = {
+    background: 'rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(18px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '22px',
+    padding: '1.5rem',
+    boxShadow: '0 20px 45px rgba(0,0,0,0.18)'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '1rem',
+    borderRadius: '14px',
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.04)',
+    color: '#fff',
+    outline: 'none',
+    fontSize: '.95rem'
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '.45rem',
+    color: '#e2e8f0',
+    fontSize: '.9rem',
+    fontWeight: '600'
+  };
+
+  const btnPrimary = {
+    border: 'none',
+    padding: '1rem 1.2rem',
+    borderRadius: '14px',
+    background:
+      'linear-gradient(135deg,#3b82f6,#8b5cf6)',
+    color: '#fff',
+    fontWeight: '700',
+    cursor: 'pointer'
+  };
+
   return (
-    <div style={{ marginTop: '2rem' }}>
-      
-      {/* 1. Analytics Dashboard Top Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--accent-color)', marginBottom: '0.25rem' }}>{analytics.total_students}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Students</p>
-        </div>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--accent-hover)', marginBottom: '0.25rem' }}>{analytics.active_students}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Active (7 Days)</p>
-        </div>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: '#ffb347', marginBottom: '0.25rem' }}>{analytics.total_enrollments}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Course Enrollments</p>
-        </div>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-          <h2 style={{ fontSize: '2.5rem', color: '#4caf50', marginBottom: '0.25rem' }}>{analytics.total_lesson_unlocks}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Lessons Unlocked</p>
-        </div>
+    <div style={{ padding: '1rem' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h1
+          style={{
+            color: '#fff',
+            fontSize: '2rem',
+            fontWeight: '800',
+            marginBottom: '.35rem'
+          }}
+        >
+          Student Management
+        </h1>
+
+        <p style={{ color: '#94a3b8' }}>
+          Manage students, registrations and access.
+        </p>
       </div>
 
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-        
-        {/* 2. Manual Student Creation Node */}
-        <div className="glass-panel" style={{ flex: '1', minWidth: '340px' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Manually Issue ID</h3>
+      {/* Analytics */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            'repeat(auto-fit,minmax(220px,1fr))',
+          gap: '1rem',
+          marginBottom: '1.5rem'
+        }}
+      >
+        <StatCard
+          title="Students"
+          value={analytics.total_students}
+          color="#3b82f6"
+          style={glassCard}
+        />
+
+        <StatCard
+          title="Active Users"
+          value={analytics.active_students}
+          color="#8b5cf6"
+          style={glassCard}
+        />
+
+        <StatCard
+          title="Enrollments"
+          value={analytics.total_enrollments}
+          color="#f59e0b"
+          style={glassCard}
+        />
+
+        <StatCard
+          title="Lessons Unlocked"
+          value={analytics.total_lesson_unlocks}
+          color="#10b981"
+          style={glassCard}
+        />
+      </div>
+
+      {/* Main Grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            'repeat(auto-fit,minmax(360px,1fr))',
+          gap: '1.5rem'
+        }}
+      >
+        {/* Create Student */}
+        <div style={glassCard}>
+          <h3
+            style={{
+              color: '#fff',
+              marginBottom: '1.2rem'
+            }}
+          >
+            Create Student ID
+          </h3>
+
           <form onSubmit={handleCreateStudent}>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Username / ID Fragment</label>
-              <input type="text" className="input-field" value={username} onChange={e => setUsername(e.target.value)} required />
+              <label style={labelStyle}>
+                Username / ID
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) =>
+                  setUsername(e.target.value)
+                }
+                required
+                style={inputStyle}
+              />
             </div>
+
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Temporary Password</label>
-              <input type="text" className="input-field" value={password} onChange={e => setPassword(e.target.value)} required />
+              <label style={labelStyle}>
+                Temporary Password
+              </label>
+              <input
+                type="text"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
+                required
+                style={inputStyle}
+              />
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ flex: '1' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>First Name</label>
-                <input type="text" className="input-field" value={firstName} onChange={e => setFirstName(e.target.value)} />
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns:
+                  'repeat(auto-fit,minmax(140px,1fr))',
+                gap: '1rem',
+                marginBottom: '1rem'
+              }}
+            >
+              <div>
+                <label style={labelStyle}>
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) =>
+                    setFirstName(e.target.value)
+                  }
+                  style={inputStyle}
+                />
               </div>
-              <div style={{ flex: '1' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Last Name</label>
-                <input type="text" className="input-field" value={lastName} onChange={e => setLastName(e.target.value)} />
+
+              <div>
+                <label style={labelStyle}>
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) =>
+                    setLastName(e.target.value)
+                  }
+                  style={inputStyle}
+                />
               </div>
             </div>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Processing...' : 'Register Student'}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={btnPrimary}
+            >
+              {loading
+                ? 'Processing...'
+                : 'Register Student'}
             </button>
-            {message && <div style={{ marginTop: '1rem', color: message.includes('success') || message.includes('deleted') ? 'var(--accent-hover)' : 'var(--danger-color)' }}>{message}</div>}
+
+            {message && (
+              <div
+                style={{
+                  marginTop: '1rem',
+                  color:
+                    message
+                      .toLowerCase()
+                      .includes(
+                        'successfully'
+                      ) ||
+                      message
+                        .toLowerCase()
+                        .includes('deleted')
+                      ? '#10b981'
+                      : '#f87171',
+                  fontWeight: '600'
+                }}
+              >
+                {message}
+              </div>
+            )}
           </form>
         </div>
 
-        {/* 3. Detailed Data Table (Replacing generic loop map) */}
-        <div className="glass-panel" style={{ flex: '2', minWidth: '500px', overflowX: 'auto' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Student Roster</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '0.75rem', fontWeight: 500 }}>ID (Username)</th>
-                <th style={{ padding: '0.75rem', fontWeight: 500 }}>Full Name</th>
-                <th style={{ padding: '0.75rem', fontWeight: 500 }}>Last Login</th>
-                <th style={{ padding: '0.75rem', fontWeight: 500, textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.length === 0 ? (
-                <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No students actively registered.</td></tr>
-              ) : students.map(student => (
-                <tr key={student.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', animation: 'slideUpFadeIn 0.3s ease-out forwards' }}>
-                  <td style={{ padding: '1rem 0.75rem', fontWeight: 'bold' }}>{student.username}</td>
-                  <td style={{ padding: '1rem 0.75rem' }}>{student.first_name} {student.last_name}</td>
-                  <td style={{ padding: '1rem 0.75rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                    {student.last_login ? new Date(student.last_login).toLocaleString() : 'Never'}
-                  </td>
-                  <td style={{ padding: '1rem 0.75rem', textAlign: 'right' }}>
-                    <button onClick={() => handleDelete(student.id, student.username)} className="btn-primary" style={{ margin: 0, padding: '0.25rem 0.75rem', width: 'auto', fontSize: '0.875rem', background: 'var(--danger-color)' }}>
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Student List */}
+        <div style={glassCard}>
+          <h3
+            style={{
+              color: '#fff',
+              marginBottom: '1.2rem'
+            }}
+          >
+            Student Roster
+          </h3>
 
+          {students.length === 0 ? (
+            <div
+              style={{
+                color: '#94a3b8',
+                padding: '1rem 0'
+              }}
+            >
+              No students registered.
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '.9rem',
+                maxHeight: '700px',
+                overflowY: 'auto',
+                paddingRight: '.25rem'
+              }}
+            >
+              {students.map((student) => (
+                <div
+                  key={student.id}
+                  style={{
+                    padding: '1rem',
+                    borderRadius: '16px',
+                    background:
+                      'rgba(255,255,255,0.04)',
+                    border:
+                      '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex',
+                    justifyContent:
+                      'space-between',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div>
+                    <h4
+                      style={{
+                        color: '#fff',
+                        marginBottom: '.25rem'
+                      }}
+                    >
+                      {student.username}
+                    </h4>
+
+                    <p
+                      style={{
+                        color: '#cbd5e1',
+                        fontSize: '.9rem'
+                      }}
+                    >
+                      {student.first_name}{' '}
+                      {student.last_name}
+                    </p>
+
+                    <span
+                      style={{
+                        color: '#64748b',
+                        fontSize: '.8rem'
+                      }}
+                    >
+                      {student.last_login
+                        ? new Date(
+                          student.last_login
+                        ).toLocaleString()
+                        : 'Never Logged In'}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      handleDelete(
+                        student.id,
+                        student.username
+                      )
+                    }
+                    style={{
+                      border: 'none',
+                      padding:
+                        '.8rem 1rem',
+                      borderRadius: '12px',
+                      background:
+                        'linear-gradient(135deg,#ef4444,#dc2626)',
+                      color: '#fff',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  color,
+  style
+}) {
+  return (
+    <div style={style}>
+      <div
+        style={{
+          width: '42px',
+          height: '4px',
+          borderRadius: '10px',
+          background: color,
+          marginBottom: '1rem'
+        }}
+      />
+
+      <h2
+        style={{
+          color: '#fff',
+          fontSize: '2rem',
+          marginBottom: '.35rem'
+        }}
+      >
+        {value}
+      </h2>
+
+      <p
+        style={{
+          color: '#94a3b8',
+          fontSize: '.85rem',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          fontWeight: '700'
+        }}
+      >
+        {title}
+      </p>
     </div>
   );
 }

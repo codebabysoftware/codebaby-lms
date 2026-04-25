@@ -4,25 +4,32 @@ import { useParams, useNavigate } from 'react-router-dom';
 export default function CourseEditor() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+
   const [course, setCourse] = useState(null);
   const [moduleTitle, setModuleTitle] = useState('');
-  
-  // For lesson upload form
+
   const [activeModule, setActiveModule] = useState(null);
   const [lessonTitle, setLessonTitle] = useState('');
   const [dayNumber, setDayNumber] = useState(1);
   const [bunnyVideoId, setBunnyVideoId] = useState('');
   const [notesUrl, setNotesUrl] = useState('');
+
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const authHeader = {
+    Authorization: `Bearer ${localStorage.getItem('access_token')}`
+  };
+
   const fetchCourse = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}/`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/${courseId}/`,
+        { headers: authHeader }
+      );
+
       if (res.ok) setCourse(await res.json());
-    } catch(e) {}
+    } catch { }
   };
 
   useEffect(() => {
@@ -31,49 +38,60 @@ export default function CourseEditor() {
 
   const handleCreateModule = async (e) => {
     e.preventDefault();
+
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/modules/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({ course: courseId, title: moduleTitle, order: course?.modules?.length || 0 })
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/modules/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+          },
+          body: JSON.stringify({
+            course: courseId,
+            title: moduleTitle,
+            order: course?.modules?.length || 0
+          })
+        }
+      );
+
       if (res.ok) {
         setModuleTitle('');
         fetchCourse();
       }
-    } catch(e) {}
+    } catch { }
   };
 
   const handleUploadLesson = async (e) => {
     e.preventDefault();
+
     if (!activeModule) {
-      setMessage('Please select a module to add a lesson to.');
+      setMessage('Please select a module first.');
       return;
     }
 
     setLoading(true);
     setMessage('');
-    
-    const payload = {
-      module: activeModule,
-      title: lessonTitle,
-      day_number: dayNumber,
-      bunny_video_id: bunnyVideoId || null,
-      notes_url: notesUrl || null
-    };
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/lessons/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/lessons/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+          },
+          body: JSON.stringify({
+            module: activeModule,
+            title: lessonTitle,
+            day_number: dayNumber,
+            bunny_video_id: bunnyVideoId || null,
+            notes_url: notesUrl || null
+          })
+        }
+      );
 
       if (res.ok) {
         setMessage('Lesson added successfully!');
@@ -85,88 +103,333 @@ export default function CourseEditor() {
       } else {
         setMessage('Failed to upload lesson.');
       }
-    } catch (err) {
+    } catch {
       setMessage('Network error.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!course) return <div style={{ padding: '2rem' }}>Loading Editor...</div>;
+  if (!course)
+    return (
+      <div style={{ padding: '2rem', color: '#fff' }}>
+        Loading Editor...
+      </div>
+    );
+
+  const card = {
+    background: 'rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(18px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '22px',
+    padding: '1.5rem',
+    boxShadow: '0 20px 45px rgba(0,0,0,0.18)'
+  };
+
+  const input = {
+    width: '100%',
+    padding: '1rem',
+    borderRadius: '14px',
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.04)',
+    color: '#fff',
+    outline: 'none',
+    fontSize: '.95rem'
+  };
+
+  const label = {
+    display: 'block',
+    marginBottom: '.45rem',
+    color: '#e2e8f0',
+    fontSize: '.9rem',
+    fontWeight: '600'
+  };
+
+  const button = {
+    border: 'none',
+    padding: '1rem 1.2rem',
+    borderRadius: '14px',
+    background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)',
+    color: '#fff',
+    fontWeight: '700',
+    cursor: 'pointer'
+  };
 
   return (
-    <div style={{ marginTop: '2rem' }}>
-      <button onClick={() => navigate('/admin/courses')} className="btn-primary" style={{ width: 'auto', marginBottom: '1.5rem', background: 'var(--bg-secondary)' }}>
-        ← Back to Courses
-      </button>
+    <div style={{ padding: '1rem' }}>
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '1rem',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem'
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              color: '#fff',
+              fontSize: '2rem',
+              fontWeight: '800',
+              marginBottom: '.35rem'
+            }}
+          >
+            Course Editor
+          </h1>
 
-      <h2>Managing: {course.title}</h2>
-      
-      <div style={{ display: 'flex', gap: '2rem', marginTop: '1.5rem' }}>
-        {/* Modules Column */}
-        <div style={{ flex: '1' }}>
-          <div className="glass-panel">
-            <h3>1. Add Module</h3>
-            <form onSubmit={handleCreateModule} style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-              <input type="text" className="input-field" placeholder="Module Title (e.g. Basics)" value={moduleTitle} onChange={e => setModuleTitle(e.target.value)} required />
-              <button type="submit" className="btn-primary" style={{ margin: 0, width: '120px' }}>Add</button>
+          <p style={{ color: '#94a3b8' }}>
+            Managing: {course.title}
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate('/admin/courses')}
+          style={{
+            ...button,
+            background: 'rgba(255,255,255,0.08)'
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+
+      {/* Layout */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            'repeat(auto-fit,minmax(360px,1fr))',
+          gap: '1.5rem'
+        }}
+      >
+        {/* Modules Section */}
+        <div>
+          <div style={card}>
+            <h3 style={{ color: '#fff', marginBottom: '1rem' }}>
+              Add Module
+            </h3>
+
+            <form
+              onSubmit={handleCreateModule}
+              style={{
+                display: 'flex',
+                gap: '.7rem',
+                flexWrap: 'wrap'
+              }}
+            >
+              <input
+                type="text"
+                value={moduleTitle}
+                onChange={(e) =>
+                  setModuleTitle(e.target.value)
+                }
+                placeholder="Module Title"
+                required
+                style={{
+                  ...input,
+                  flex: 1,
+                  minWidth: '220px'
+                }}
+              />
+
+              <button type="submit" style={button}>
+                Add
+              </button>
             </form>
           </div>
 
-          <div style={{ marginTop: '1.5rem' }}>
+          {/* Modules List */}
+          <div style={{ marginTop: '1rem' }}>
             {course.modules?.map((m) => (
-               <div key={m.id} className="glass-panel" style={{ padding: '1rem', marginBottom: '1rem', border: activeModule === m.id ? '2px solid var(--accent-color)' : '1px solid var(--glass-border)' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                   <h4>{m.title}</h4>
-                   <button onClick={() => setActiveModule(m.id)} className="btn-primary" style={{ width: 'auto', margin: 0, padding: '0.25rem 0.5rem', background: activeModule === m.id ? 'var(--accent-color)' : 'var(--bg-secondary)' }}>
-                     {activeModule === m.id ? 'Selected' : 'Select'}
-                   </button>
-                 </div>
-                 
-                 <div style={{ marginTop: '1rem', fontSize: '0.875rem' }}>
-                   {m.lessons?.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>No lessons attached.</p> : (
-                     <ul style={{ listStylePos: 'inside', color: 'var(--text-secondary)' }}>
-                       {m.lessons?.map(l => (
-                         <li key={l.id}>Day {l.day_number}: {l.title}</li>
-                       ))}
-                     </ul>
-                   )}
-                 </div>
-               </div>
+              <div
+                key={m.id}
+                style={{
+                  ...card,
+                  marginBottom: '1rem',
+                  border:
+                    activeModule === m.id
+                      ? '1px solid #3b82f6'
+                      : '1px solid rgba(255,255,255,0.08)'
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                    alignItems: 'center'
+                  }}
+                >
+                  <h4
+                    style={{
+                      color: '#fff',
+                      fontSize: '1.05rem'
+                    }}
+                  >
+                    {m.title}
+                  </h4>
+
+                  <button
+                    onClick={() => setActiveModule(m.id)}
+                    style={{
+                      ...button,
+                      padding: '.65rem 1rem',
+                      background:
+                        activeModule === m.id
+                          ? 'linear-gradient(135deg,#3b82f6,#8b5cf6)'
+                          : 'rgba(255,255,255,0.08)'
+                    }}
+                  >
+                    {activeModule === m.id
+                      ? 'Selected'
+                      : 'Select'}
+                  </button>
+                </div>
+
+                <div style={{ marginTop: '1rem' }}>
+                  {m.lessons?.length === 0 ? (
+                    <p style={{ color: '#94a3b8' }}>
+                      No lessons added.
+                    </p>
+                  ) : (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '.6rem'
+                      }}
+                    >
+                      {m.lessons.map((l) => (
+                        <div
+                          key={l.id}
+                          style={{
+                            padding: '.75rem',
+                            borderRadius: '12px',
+                            background:
+                              'rgba(255,255,255,0.04)',
+                            color: '#cbd5e1'
+                          }}
+                        >
+                          Day {l.day_number}: {l.title}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Lesson Column */}
-        <div style={{ flex: '1' }}>
-          <div className="glass-panel" style={{ opacity: activeModule ? 1 : 0.5, pointerEvents: activeModule ? 'auto' : 'none' }}>
-            <h3>2. Add Day-wise Lesson</h3>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-              Requires a selected module from the left.
+        {/* Lesson Form */}
+        <div>
+          <div
+            style={{
+              ...card,
+              opacity: activeModule ? 1 : 0.65,
+              pointerEvents: activeModule
+                ? 'auto'
+                : 'none'
+            }}
+          >
+            <h3 style={{ color: '#fff', marginBottom: '.4rem' }}>
+              Add Lesson
+            </h3>
+
+            <p
+              style={{
+                color: '#94a3b8',
+                marginBottom: '1.3rem'
+              }}
+            >
+              Select a module to begin adding lessons.
             </p>
 
             <form onSubmit={handleUploadLesson}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Day Number</label>
-                <input type="number" className="input-field" value={dayNumber} onChange={e => setDayNumber(parseInt(e.target.value))} required />
-              </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Lesson Title</label>
-                <input type="text" className="input-field" value={lessonTitle} onChange={e => setLessonTitle(e.target.value)} required />
-              </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Bunny Stream Video ID (Optional)</label>
-                <input type="text" className="input-field" placeholder="e.g. 1a2b3c4d-5e6f..." value={bunnyVideoId} onChange={e => setBunnyVideoId(e.target.value)} />
-              </div>
-               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Google Drive Notes URL (Optional)</label>
-                <input type="url" className="input-field" placeholder="https://drive.google.com/..." value={notesUrl} onChange={e => setNotesUrl(e.target.value)} />
+                <label style={label}>Day Number</label>
+                <input
+                  type="number"
+                  value={dayNumber}
+                  onChange={(e) =>
+                    setDayNumber(
+                      parseInt(e.target.value)
+                    )
+                  }
+                  style={input}
+                  required
+                />
               </div>
 
-              {message && <div className="error-text" style={{ marginBottom: '1rem', color: message.includes('success') ? 'var(--accent-color)' : 'var(--danger-color)' }}>{message}</div>}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={label}>Lesson Title</label>
+                <input
+                  type="text"
+                  value={lessonTitle}
+                  onChange={(e) =>
+                    setLessonTitle(e.target.value)
+                  }
+                  style={input}
+                  required
+                />
+              </div>
 
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Uploading...' : 'Save Lesson'}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={label}>
+                  Bunny Video ID
+                </label>
+                <input
+                  type="text"
+                  value={bunnyVideoId}
+                  onChange={(e) =>
+                    setBunnyVideoId(e.target.value)
+                  }
+                  style={input}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={label}>
+                  Notes URL
+                </label>
+                <input
+                  type="url"
+                  value={notesUrl}
+                  onChange={(e) =>
+                    setNotesUrl(e.target.value)
+                  }
+                  style={input}
+                />
+              </div>
+
+              {message && (
+                <div
+                  style={{
+                    marginBottom: '1rem',
+                    color: message
+                      .toLowerCase()
+                      .includes('success')
+                      ? '#10b981'
+                      : '#f87171',
+                    fontWeight: '600'
+                  }}
+                >
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={button}
+              >
+                {loading
+                  ? 'Uploading...'
+                  : 'Save Lesson'}
               </button>
             </form>
           </div>

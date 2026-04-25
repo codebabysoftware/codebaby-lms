@@ -6,23 +6,30 @@ export default function AdminHome() {
     students: null,
     courses: null
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     const fetchGlobalPayload = async () => {
       try {
-        const headers = { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` };
-        
-        // Execute parallel requests to capture all angles of the platform
+        const headers = {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        };
+
         const [studentRes, courseRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL}/api/admin/analytics/`, { headers }),
-          fetch(`${import.meta.env.VITE_API_URL}/api/courses/analytics/`, { headers })
+          fetch(`${import.meta.env.VITE_API_URL}/api/admin/analytics/`, {
+            headers
+          }),
+          fetch(`${import.meta.env.VITE_API_URL}/api/courses/analytics/`, {
+            headers
+          })
         ]);
 
         if (studentRes.ok && courseRes.ok) {
           const students = await studentRes.json();
           const courses = await courseRes.json();
+
           setAnalytics({ students, courses });
         } else {
           setError(true);
@@ -33,82 +40,294 @@ export default function AdminHome() {
         setLoading(false);
       }
     };
-    
+
     fetchGlobalPayload();
   }, []);
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading Global Matrix...</div>;
-  if (error) return <div style={{ padding: '2rem', color: 'var(--danger-color)' }}>Failed to aggregate global analytics. Check server connection.</div>;
+  if (loading)
+    return (
+      <div
+        style={{
+          padding: '3rem',
+          color: 'white',
+          textAlign: 'center',
+          fontSize: '1.1rem'
+        }}
+      >
+        Loading Dashboard...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div
+        style={{
+          padding: '3rem',
+          color: '#ff6b6b',
+          textAlign: 'center',
+          fontSize: '1rem'
+        }}
+      >
+        Failed to load analytics. Check backend connection.
+      </div>
+    );
+
+  const cards = [
+    {
+      title: 'Active Users',
+      value: analytics.students.active_students,
+      sub: `/ ${analytics.students.total_students}`,
+      color: '#3b82f6'
+    },
+    {
+      title: 'Courses',
+      value: analytics.courses.total_courses,
+      sub: '',
+      color: '#8b5cf6'
+    },
+    {
+      title: 'Enrollments',
+      value: analytics.courses.total_enrollments,
+      sub: '',
+      color: '#f59e0b'
+    },
+    {
+      title: 'Lessons Granted',
+      value: analytics.students.total_lesson_unlocks,
+      sub: '',
+      color: '#10b981'
+    }
+  ];
 
   return (
-    <div style={{ marginTop: '2rem' }}>
-      {/* High-Level Overview Ribbon */}
-      <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>Global Platform Health</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem 1rem', borderTop: '4px solid var(--accent-color)' }}>
-          <h2 style={{ fontSize: '3rem', marginBottom: '0.25rem' }}>{analytics.students.active_students}<span style={{fontSize: '1rem', color: 'var(--text-secondary)'}}> / {analytics.students.total_students}</span></h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Active Users (7 Days)</p>
-        </div>
+    <div
+      style={{
+        padding: '2rem',
+        minHeight: '100vh',
+        background:
+          'linear-gradient(135deg, #0f172a 0%, #111827 45%, #1e293b 100%)'
+      }}
+    >
+      {/* Header */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h1
+          style={{
+            color: '#fff',
+            fontSize: '2rem',
+            marginBottom: '.4rem',
+            fontWeight: '800'
+          }}
+        >
+          Admin Dashboard
+        </h1>
 
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem 1rem', borderTop: '4px solid var(--accent-hover)' }}>
-          <h2 style={{ fontSize: '3rem', marginBottom: '0.25rem' }}>{analytics.courses.total_courses}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Platform Courses</p>
-        </div>
-
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem 1rem', borderTop: '4px solid #ffb347' }}>
-          <h2 style={{ fontSize: '3rem', marginBottom: '0.25rem' }}>{analytics.courses.total_enrollments}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Course Enrollments</p>
-        </div>
-
-        <div className="glass-panel" style={{ textAlign: 'center', padding: '2rem 1rem', borderTop: '4px solid #4caf50' }}>
-          <h2 style={{ fontSize: '3rem', marginBottom: '0.25rem' }}>{analytics.students.total_lesson_unlocks}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Lessons Granted</p>
-        </div>
+        <p style={{ color: '#94a3b8', fontSize: '0.95rem' }}>
+          Monitor platform growth, students and content controls.
+        </p>
       </div>
 
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-        {/* Quick Actions Hub */}
-        <div style={{ flex: '1', minWidth: '350px' }}>
-          <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>Quick Deployment Actions</h3>
-          <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            
-            <Link to="/admin/students" className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', height: '60px', fontSize: '1.1rem', background: 'rgba(255,255,255,0.05)' }}>
-              🎓 Issue New Student ID
+      {/* Top Stats */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
+          gap: '1.2rem',
+          marginBottom: '2rem'
+        }}
+      >
+        {cards.map((card, index) => (
+          <div
+            key={index}
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '20px',
+              padding: '1.5rem',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+            }}
+          >
+            <div
+              style={{
+                width: '42px',
+                height: '4px',
+                borderRadius: '10px',
+                background: card.color,
+                marginBottom: '1rem'
+              }}
+            />
+
+            <h2
+              style={{
+                color: '#fff',
+                fontSize: '2.3rem',
+                marginBottom: '.4rem'
+              }}
+            >
+              {card.value}
+              <span
+                style={{
+                  fontSize: '.95rem',
+                  color: '#94a3b8',
+                  marginLeft: '4px'
+                }}
+              >
+                {card.sub}
+              </span>
+            </h2>
+
+            <p
+              style={{
+                color: '#cbd5e1',
+                fontSize: '.85rem',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                fontWeight: '600'
+              }}
+            >
+              {card.title}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))',
+          gap: '1.5rem'
+        }}
+      >
+        {/* Quick Actions */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(16px)',
+            borderRadius: '22px',
+            padding: '2rem',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}
+        >
+          <h3
+            style={{
+              color: '#fff',
+              marginBottom: '1.5rem',
+              fontSize: '1.2rem'
+            }}
+          >
+            Quick Actions
+          </h3>
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}
+          >
+            <Link
+              to="/admin/students"
+              style={buttonStyle}
+            >
+              🎓 Issue Student ID
             </Link>
 
-            <Link to="/admin/courses/create" className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', height: '60px', fontSize: '1.1rem', background: 'rgba(255,255,255,0.05)' }}>
-              📚 Open Course Compiler
+            <Link
+              to="/admin/courses/create"
+              style={buttonStyle}
+            >
+              📚 Create Course
             </Link>
 
-            <Link to="/admin/access" className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', height: '60px', fontSize: '1.1rem', background: 'rgba(255,255,255,0.05)' }}>
-              🔑 Execute Bulk Assignments
+            <Link
+              to="/admin/access"
+              style={buttonStyle}
+            >
+              🔑 Manage Access
             </Link>
-            
           </div>
         </div>
 
-        {/* System Intelligence Box */}
-        <div style={{ flex: '1', minWidth: '350px' }}>
-          <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>System Metrics Breakdown</h3>
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>Distributed Modules</strong>
-              <span style={{ color: 'var(--accent-color)' }}>{analytics.courses.total_modules} Mapped</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>Total Encrypted Video / PDF Nodes</strong>
-              <span style={{ color: 'var(--accent-color)' }}>{analytics.courses.total_lessons} Secured</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>System Security Friction</strong>
-              <span style={{ color: '#4caf50' }}>[Active]</span>
-            </div>
-             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '2rem', lineHeight: '1.5' }}>
-               All database mapping endpoints are operating optimally. Browser-level capture deterrence (ContextMenu, KeyCapture) is strictly enforced across all student endpoints.
-            </p>
-          </div>
+        {/* System Metrics */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(16px)',
+            borderRadius: '22px',
+            padding: '2rem',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}
+        >
+          <h3
+            style={{
+              color: '#fff',
+              marginBottom: '1.5rem',
+              fontSize: '1.2rem'
+            }}
+          >
+            Platform Metrics
+          </h3>
+
+          <MetricRow
+            label="Distributed Modules"
+            value={`${analytics.courses.total_modules} Modules`}
+          />
+
+          <MetricRow
+            label="Secured Lessons"
+            value={`${analytics.courses.total_lessons} Items`}
+          />
+
+          <MetricRow
+            label="Protection Status"
+            value="Active"
+            green
+          />
+
+          <p
+            style={{
+              color: '#94a3b8',
+              fontSize: '.9rem',
+              marginTop: '1.5rem',
+              lineHeight: '1.7'
+            }}
+          >
+            Security layers and access control systems are active across all
+            student endpoints.
+          </p>
         </div>
       </div>
     </div>
   );
 }
+
+function MetricRow({ label, value, green }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        padding: '1rem 0',
+        borderBottom: '1px solid rgba(255,255,255,0.08)'
+      }}
+    >
+      <span style={{ color: '#e2e8f0' }}>{label}</span>
+
+      <strong style={{ color: green ? '#10b981' : '#60a5fa' }}>
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+const buttonStyle = {
+  textDecoration: 'none',
+  color: '#fff',
+  background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)',
+  padding: '1rem',
+  borderRadius: '14px',
+  textAlign: 'center',
+  fontWeight: '700',
+  transition: '0.3s ease'
+};
