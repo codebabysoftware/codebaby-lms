@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Course, Module, Lesson, LessonAccess, Enrollment
 
 class LessonSerializer(serializers.ModelSerializer):
+    video_file = serializers.FileField(write_only=True, required=False)
+
     class Meta:
         model = Lesson
         fields = '__all__'
@@ -36,16 +38,23 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
 class StudentLessonSerializer(serializers.ModelSerializer):
     is_unlocked = serializers.SerializerMethodField()
+    video_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
-        fields = ('id', 'title', 'day_number', 'created_at', 'is_unlocked')
+        fields = ('id', 'title', 'day_number', 'created_at', 'is_unlocked', 'video_url')
 
     def get_is_unlocked(self, obj):
         user = self.context['request'].user
         if getattr(user, 'role', None) == 'ADMIN':
             return True
         return LessonAccess.objects.filter(student=user, lesson=obj).exists()
+
+    def get_video_url(self, obj):
+        from django.conf import settings
+        if obj.bunny_video_id and settings.BUNNY_STREAM_LIBRARY_ID:
+            return f"https://iframe.mediadelivery.net/embed/{settings.BUNNY_STREAM_LIBRARY_ID}/{obj.bunny_video_id}?autoplay=true"
+        return None
 
 class StudentModuleSerializer(serializers.ModelSerializer):
     lessons = StudentLessonSerializer(many=True, read_only=True)

@@ -132,7 +132,21 @@ export default function CourseViewer() {
             
             <div style={{ marginBottom: '2rem' }}>
               <h4>Video Lecture</h4>
-              <SecureMediaFetcher contentId={selectedLesson.id} type="video" title={selectedLesson.title} />
+              {selectedLesson.video_url ? (
+                <div style={{ marginTop: '1rem', position: 'relative', paddingTop: '56.25%', borderRadius: '8px', overflow: 'hidden', background: '#000' }}>
+                  <iframe 
+                    src={selectedLesson.video_url} 
+                    loading="lazy" 
+                    style={{ border: 0, position: 'absolute', top: 0, height: '100%', width: '100%' }} 
+                    allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" 
+                    allowFullScreen={true}
+                  ></iframe>
+                </div>
+              ) : (
+                <div style={{ marginTop: '1rem', padding: '2rem', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                  No video available for this lesson.
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
