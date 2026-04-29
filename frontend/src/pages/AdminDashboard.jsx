@@ -170,7 +170,7 @@ export default function AdminDashboard() {
             >
               {user?.profile_pic_url ? (
                 <img 
-                  src={user.profile_pic_url.startsWith('http') ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
+                  src={(user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
                   alt="Admin" 
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                 />

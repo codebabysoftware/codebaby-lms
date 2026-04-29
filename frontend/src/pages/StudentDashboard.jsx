@@ -92,7 +92,7 @@ function StudentLibrary() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
             {user?.profile_pic_url && (
               <img 
-                src={user.profile_pic_url.startsWith('http') ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
+                src={(user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
                 alt="Profile" 
                 style={{
                   width: '60px',
@@ -358,7 +358,7 @@ export default function StudentDashboard() {
           >
             {user?.profile_pic_url ? (
               <img 
-                src={user.profile_pic_url.startsWith('http') ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
+                src={(user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
                 alt="Profile" 
                 style={{
                   width: '100%',

@@ -8,7 +8,7 @@ export default function ProfileSettings() {
   const [file, setFile] = useState(null);
   const getInitialPreview = () => {
     if (!user?.profile_pic_url) return null;
-    if (user.profile_pic_url.startsWith('http')) return user.profile_pic_url;
+    if (user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) return user.profile_pic_url;
     return `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`;
   };
 

@@ -27,6 +27,11 @@ class User(AbstractUser):
         null=True
     )
 
+    profile_pic_base64 = models.TextField(
+        blank=True,
+        null=True
+    )
+
     phone = models.CharField(
         max_length=15,
         blank=True,
