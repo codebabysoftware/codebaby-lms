@@ -262,9 +262,31 @@ export default function CourseList() {
                     border:
                       '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '20px',
-                    padding: '1.25rem'
+                    padding: '1.25rem',
+                    overflow: 'hidden'
                   }}
                 >
+                  {/* Thumbnail */}
+                  <div style={{ 
+                    width: 'calc(100% + 2.5rem)', 
+                    height: '140px', 
+                    margin: '-1.25rem -1.25rem 1.25rem -1.25rem',
+                    background: 'rgba(0,0,0,0.2)',
+                    overflow: 'hidden'
+                  }}>
+                    {(course.thumbnail_base64 || course.thumbnail) ? (
+                      <img 
+                        src={course.thumbnail_base64 || `${import.meta.env.VITE_API_URL}${course.thumbnail}`} 
+                        alt={course.title} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '2rem' }}>
+                        📚
+                      </div>
+                    )}
+                  </div>
+
                   <h4
                     style={{
                       color: '#fff',

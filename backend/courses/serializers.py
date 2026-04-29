@@ -67,7 +67,7 @@ class StudentCourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'created_at', 'modules', 'is_unlocked_overall')
+        fields = ('id', 'title', 'description', 'thumbnail', 'thumbnail_base64', 'created_at', 'modules', 'is_unlocked_overall')
 
     def get_is_unlocked_overall(self, obj):
         user = self.context['request'].user

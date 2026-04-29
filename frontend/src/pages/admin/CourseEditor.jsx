@@ -17,6 +17,11 @@ export default function CourseEditor() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editThumbnail, setEditThumbnail] = useState('');
+  const [preview, setPreview] = useState(null);
+
   const authHeader = {
     Authorization: `Bearer ${localStorage.getItem('access_token')}`
   };
@@ -28,13 +33,74 @@ export default function CourseEditor() {
         { headers: authHeader }
       );
 
-      if (res.ok) setCourse(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setCourse(data);
+        setEditTitle(data.title);
+        setEditDescription(data.description || '');
+        if (data.thumbnail_base64) {
+          setPreview(data.thumbnail_base64);
+        } else if (data.thumbnail) {
+          setPreview(`${import.meta.env.VITE_API_URL}${data.thumbnail}`);
+        }
+      }
     } catch { }
   };
 
   useEffect(() => {
     fetchCourse();
   }, [courseId]);
+
+  const handleUpdateMetadata = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/${courseId}/`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+          },
+          body: JSON.stringify({
+            title: editTitle,
+            description: editDescription,
+            thumbnail_base64: editThumbnail || undefined
+          })
+        }
+      );
+
+      if (res.ok) {
+        setMessage('Course details updated!');
+        fetchCourse();
+      } else {
+        setMessage('Failed to update course details.');
+      }
+    } catch {
+      setMessage('Network error.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setMessage('Image too large (max 2MB)');
+        return;
+      }
+      setPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditThumbnail(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCreateModule = async (e) => {
     e.preventDefault();
@@ -205,6 +271,50 @@ export default function CourseEditor() {
           gap: '1.5rem'
         }}
       >
+        {/* Course Details Section */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <div style={card}>
+            <h3 style={{ color: '#fff', marginBottom: '1.5rem' }}>Course Details</h3>
+            <form onSubmit={handleUpdateMetadata} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '100%',
+                  height: '180px',
+                  borderRadius: '18px',
+                  border: '1px solid var(--glass-border)',
+                  overflow: 'hidden',
+                  background: 'rgba(0,0,0,0.2)',
+                  position: 'relative'
+                }}>
+                  {preview ? (
+                    <img src={preview} alt="Course Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ color: 'var(--text-muted)', paddingTop: '60px' }}>No Thumbnail</div>
+                  )}
+                  <label htmlFor="edit-thumbnail" style={{ position: 'absolute', inset: 0, cursor: 'pointer' }}>
+                    <input type="file" id="edit-thumbnail" hidden onChange={handleFileChange} accept="image/*" />
+                  </label>
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.5rem' }}>Click to change thumbnail</p>
+              </div>
+
+              <div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={label}>Course Title</label>
+                  <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={input} required />
+                </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={label}>Course Description</label>
+                  <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} style={{ ...input, minHeight: '100px', resize: 'vertical' }} />
+                </div>
+                <button type="submit" disabled={loading} style={{ ...button, width: '100%' }}>
+                  {loading ? 'Saving...' : 'Update Course Details'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         {/* Modules Section */}
         <div>
           <div style={card}>

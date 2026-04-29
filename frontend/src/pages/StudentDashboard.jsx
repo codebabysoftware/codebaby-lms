@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useCallback } from 'react';
 import {
   Routes,
   Route,
@@ -10,211 +10,209 @@ import { AuthContext } from '../context/AuthContext';
 import CourseViewer from './student/CourseViewer';
 import ProfileSettings from './student/ProfileSettings';
 
-
-function StudentLibrary() {
-  const { user } = useContext(AuthContext);
-
-  const [courses, setCourses] = useState([]);
-  const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
+// Hooks
+function useWindowSize() {
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
 
   useEffect(() => {
-    const fetchPersonalData = async () => {
-      try {
-        const headers = {
-          Authorization: `Bearer ${localStorage.getItem(
-            'access_token'
-          )}`
-        };
-
-        const [statsRes, coursesRes] =
-          await Promise.all([
-            fetch(
-              `${import.meta.env.VITE_API_URL}/api/student/analytics/`,
-              { headers }
-            ),
-            fetch(
-              `${import.meta.env.VITE_API_URL}/api/student-courses/`,
-              { headers }
-            )
-          ]);
-
-        if (statsRes.ok && coursesRes.ok) {
-          setAnalytics(await statsRes.json());
-          setCourses(await coursesRes.json());
-        }
-      } catch {
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPersonalData();
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  return windowSize;
+}
+
+// Sub-components
+function SidebarLink({ to, active, label, icon, onClick }) {
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className="nav-link"
+      style={{
+        padding: '1rem',
+        textDecoration: 'none',
+        borderRadius: '12px',
+        fontWeight: '700',
+        fontSize: '0.95rem',
+        color: active ? '#fff' : 'var(--text-muted)',
+        background: active ? 'rgba(255,255,255,0.05)' : 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        borderLeft: active ? '4px solid var(--accent-secondary)' : '4px solid transparent',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      <span style={{ fontSize: '1.2rem' }}>{icon}</span>
+      {label}
+    </Link>
+  );
+}
+
+function StatCard({ title, value, icon, color }) {
+  return (
+    <div className="premium-glass" style={{ padding: '2rem', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '3rem', opacity: 0.1 }}>{icon}</div>
+      <div style={{ width: '40px', height: '4px', borderRadius: '10px', background: color, marginBottom: '1.2rem' }} />
+      <h2 style={{ fontSize: '3rem', fontWeight: '900', color: '#fff', marginBottom: '0.5rem', fontFamily: 'var(--font-display)' }}>{value}</h2>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>{title}</p>
+    </div>
+  );
+}
+
+function StudentLibrary({ user, courses, analytics, loading }) {
   if (loading) {
     return (
-      <div
-        style={{
-          padding: '2rem',
-          color: '#cbd5e1'
-        }}
-      >
-        Loading your dashboard...
+      <div style={{ display: 'flex', height: '60vh', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="shimmer-bg" style={{ width: '200px', height: '20px', borderRadius: '10px' }}></div>
       </div>
     );
   }
 
-  const glass = {
-    background: 'rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(18px)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '22px',
-    boxShadow: '0 20px 45px rgba(0,0,0,0.18)'
-  };
-
   return (
-    <div>
-      {/* Hero */}
+    <div style={{ animation: 'slideUpFadeIn 0.6s ease-out' }}>
+      {/* Hero Section */}
       <div
         style={{
           position: 'relative',
-          height: '50vh',
-          minHeight: '400px',
+          height: '60vh',
+          minHeight: '450px',
           width: '100%',
-          marginBottom: '2rem',
-          borderRadius: '12px',
+          marginBottom: '3rem',
+          borderRadius: '24px',
           overflow: 'hidden',
-          background: 'linear-gradient(to right, #000 30%, transparent 80%), url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070&auto=format&fit=crop") center/cover'
+          background: 'linear-gradient(to right, #050505 20%, transparent 90%), url("https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop") center/cover',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
         }}
       >
-        <div style={{ position: 'absolute', bottom: '15%', left: '4%', maxWidth: '600px', zIndex: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ position: 'absolute', bottom: '15%', left: '5%', maxWidth: '700px', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', marginBottom: '1.5rem' }}>
             {user?.profile_pic_url && (
-              <img 
-                src={(user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
-                alt="Profile" 
+              <img
+                src={(user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`}
+                alt="Profile"
                 style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
+                  width: '70px',
+                  height: '70px',
+                  borderRadius: '20px',
                   objectFit: 'cover',
-                  border: '2px solid #fff'
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
                 }}
               />
             )}
-            <h1 className="hero-title" style={{ fontSize: '3.5rem', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1' }}>
-              Welcome Back
-            </h1>
+            <div>
+              <span style={{ color: 'var(--accent-secondary)', fontWeight: '800', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Personalized Portal</span>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '4rem', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '0.9' }}>
+                Welcome Back<br />
+              </h1>
+            </div>
           </div>
-          
-          <h2 className="hero-subtitle" style={{ fontSize: '1.5rem', fontWeight: '600', color: '#e5e5e5', marginBottom: '1.5rem' }}>
-            Continue your journey with {user?.first_name || user?.username}
+
+          <h2 style={{ fontSize: '1.8rem', fontWeight: '600', color: '#e5e5e5', marginBottom: '1.5rem', fontFamily: 'var(--font-display)' }}>
+            Hey , <span className="text-gradient">{user?.first_name || user?.username}</span>
           </h2>
 
-          <p style={{ color: '#a3a3a3', fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '2rem' }}>
-            The most advanced software development curriculum is waiting for you. Access premium lessons and grow your career with CodeBaby Software.
+          <p style={{ color: '#a3a3a3', fontSize: '1.2rem', lineHeight: '1.6', marginBottom: '2.5rem', maxWidth: '550px' }}>
+            Elevate your Technical skills with CodeBaby Software's world-class curriculum. Your next breakthrough starts here.
           </p>
 
-          <div className="hero-buttons" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button style={{ padding: '0.8rem 2rem', background: '#fff', color: '#000', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              ▶ Play Last Lesson
+          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <button className="btn-premium">
+              <span>▶</span> Play Last Lesson
             </button>
-            <button style={{ padding: '0.8rem 2rem', background: 'rgba(109, 109, 110, 0.7)', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.1rem' }}>
-              ⓘ More Info
+            <button className="btn-secondary-premium">
+              ⓘ Learn More
             </button>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      {analytics && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns:
-              'repeat(auto-fit,minmax(220px,1fr))',
-            gap: '1rem',
-            marginBottom: '1.5rem'
-          }}
-        >
-          <StatCard
-            title="Courses"
-            value={
-              analytics.total_enrollments
-            }
-            color="#3b82f6"
-          />
+      {/* Quick Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
+        <StatCard title="Active Courses" value={analytics?.total_enrollments || 0} icon="📚" color="linear-gradient(135deg, #3b82f6, #2563eb)" />
+        <StatCard title="Lessons Mastered" value={analytics?.total_lesson_unlocks || 0} icon="⚡" color="linear-gradient(135deg, #10b981, #059669)" />
+      </div>
 
-          <StatCard
-            title="Lessons Unlocked"
-            value={
-              analytics.total_lesson_unlocks
-            }
-            color="#10b981"
-          />
+      {/* Recommendations Section */}
+      <div style={{ marginBottom: '4rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', padding: '0 0.5rem' }}>
+          <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '800', fontFamily: 'var(--font-display)' }}>
+            Recommended for You
+          </h2>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600' }}>View All →</span>
         </div>
-      )}
-
-      {/* Courses */}
-      <div
-        style={{
-          marginBottom: '1rem'
-        }}
-      >
-        <h2
-          style={{
-            color: '#fff',
-            fontSize: '1.4rem',
-            fontWeight: '700',
-            marginBottom: '1rem',
-            paddingLeft: '0.5rem'
-          }}
-        >
-          My Courses
-        </h2>
 
         {courses.length === 0 ? (
-          <div style={{ color: '#666', padding: '1rem' }}>
-            No courses assigned yet.
+          <div className="premium-glass" style={{ padding: '3rem', textAlign: 'center', borderRadius: '24px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>No courses assigned yet. Your premium journey is about to begin.</p>
           </div>
         ) : (
-            <div
-              className="netflix-slider"
-              style={{
-                display: 'flex',
-                gap: '0.8rem',
-                overflowX: 'auto',
-                padding: '0.5rem',
-                paddingBottom: '2rem',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
-              }}
-            >
-              {courses.map((c) => (
-                <Link
-                  key={c.id}
-                  className="netflix-card"
-                  to={`/student/courses/${c.id}`}
-                >
+          <div
+            className="netflix-slider"
+            style={{
+              display: 'flex',
+              gap: '1.5rem',
+              overflowX: 'auto',
+              padding: '1rem 0.5rem 2rem 0.5rem',
+            }}
+          >
+            {courses.map((c) => (
+              <Link
+                key={c.id}
+                className="netflix-card"
+                to={`/student/courses/${c.id}`}
+                style={{
+                  minWidth: '340px',
+                  height: '220px',
+                  borderRadius: '20px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--glass-border)',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
                 {!c.is_unlocked_overall && (
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5 }}>
-                    <span style={{ color: '#fff', fontSize: '1.2rem' }}>🔒 Locked</span>
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5 }}>
+                    <span style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '700', padding: '0.6rem 1.2rem', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', border: '1px solid rgba(255,255,255,0.2)' }}>🔒 Locked</span>
                   </div>
                 )}
-                
-                <div style={{ height: '70%', background: 'linear-gradient(45deg, #222, #333)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                   <span style={{ color: '#444', fontSize: '3rem', fontWeight: 'bold' }}>CODE</span>
+
+                <div style={{ height: '65%', background: 'linear-gradient(135deg, #111, #222)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  {(c.thumbnail_base64 || c.thumbnail) ? (
+                    <img
+                      src={c.thumbnail_base64 || `${import.meta.env.VITE_API_URL}${c.thumbnail}`}
+                      alt={c.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <>
+                      <div style={{ position: 'absolute', opacity: 0.1, fontSize: '6rem', fontWeight: '900', color: '#fff', whiteSpace: 'nowrap' }}>CODEBABY</div>
+                      <span style={{ color: 'var(--accent-secondary)', fontSize: '1.4rem', fontWeight: '900', zIndex: 1, letterSpacing: '4px' }}>CORE PROGRAM</span>
+                    </>
+                  )}
                 </div>
 
-                <div style={{ padding: '0.8rem', background: '#181818', height: '30%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <h3 style={{ color: '#fff', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ padding: '1.2rem', background: '#111', height: '35%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <h3 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {c.title}
                   </h3>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem' }}>
-                     <span style={{ color: '#46d369', fontSize: '0.75rem', fontWeight: 'bold' }}>98% Match</span>
-                     <span style={{ color: '#fff', fontSize: '0.75rem', border: '1px solid #666', padding: '0 0.3rem', borderRadius: '2px' }}>HD</span>
-                     <span style={{ color: '#aaa', fontSize: '0.75rem' }}>{c.modules?.length || 0} Modules</span>
+                  <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                    <span style={{ color: '#46d369', fontSize: '0.85rem', fontWeight: '800' }}>98% Match</span>
+                    <span style={{ color: '#aaa', fontSize: '0.85rem', fontWeight: '600' }}>{c.modules?.length || 0} Modules</span>
                   </div>
                 </div>
               </Link>
@@ -227,381 +225,143 @@ function StudentLibrary() {
 }
 
 export default function StudentDashboard() {
-  const { user, logout } =
-    useContext(AuthContext);
-
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const { width } = useWindowSize();
+  const [mobileMenu, setMobileMenu] = useState(false);
 
-  const [mobileMenu, setMobileMenu] =
-    useState(false);
+  // Data State lifted to parent to prevent flickering on route change
+  const [courses, setCourses] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const headers = {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      };
+      const [statsRes, coursesRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/api/student/analytics/`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/student-courses/`, { headers })
+      ]);
+      if (statsRes.ok && coursesRes.ok) {
+        setAnalytics(await statsRes.json());
+        setCourses(await coursesRes.json());
+      }
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const glass = {
-    background: 'rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(18px)',
-    border: '1px solid rgba(255,255,255,0.08)'
-  };
+  const isMobile = width < 900;
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        background: '#141414',
-        color: '#fff',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-      }}
-    >
-      <style>
-        {`
-          @keyframes netflixZoom {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.08); z-index: 10; }
-          }
-          
-          .netflix-slider::-webkit-scrollbar {
-            display: none;
-          }
-          
-          .netflix-card:hover {
-            animation: netflixZoom 0.3s forwards;
-          }
-
-          .netflix-card {
-            min-width: 300px;
-            height: 170px;
-            background: linear-gradient(to bottom, #222, #111);
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            text-decoration: none;
-            flex-shrink: 0;
-          }
-
-          @media (max-width: 600px) {
-            .netflix-card {
-              min-width: 240px !important;
-              height: 140px !important;
-            }
-          }
-
-          @media (max-width: 900px) {
-            .hero-title { font-size: 2.2rem !important; }
-            .hero-subtitle { font-size: 1.1rem !important; }
-            .hero-buttons { flex-direction: column !important; }
-            .sidebar-nav { 
-              width: 100% !important; 
-              height: 100vh !important; 
-              position: fixed !important;
-              z-index: 1000 !important;
-              background: #000 !important;
-            }
-          }
-        `}
-      </style>
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Sidebar */}
       <aside
-        className="sidebar-nav"
+        className={`sidebar-nav ${mobileMenu ? 'active' : ''}`}
         style={{
-          width: '240px',
-          padding: '1.5rem',
-          background: '#000',
-          borderRight: '1px solid rgba(255,255,255,0.05)',
-          display:
-            window.innerWidth < 900
-              ? mobileMenu
-                ? 'flex'
-                : 'none'
-              : 'flex',
+          width: '280px',
+          padding: '2rem 1.5rem',
+          background: 'var(--bg-secondary)',
+          borderRight: '1px solid var(--glass-border)',
+          display: 'flex',
           flexDirection: 'column',
-          position:
-            window.innerWidth < 900
-              ? 'fixed'
-              : 'relative',
-          left: 0,
+          position: isMobile ? 'fixed' : 'sticky',
           top: 0,
+          left: 0,
+          height: '100vh',
           zIndex: 1000,
-          height: '100vh'
         }}
       >
-        {/* Profile */}
-        <div
-          style={{
-            textAlign: 'center',
-            marginBottom: '2rem'
-          }}
-        >
-          <div
-            style={{
-              width: '72px',
-              height: '72px',
-              borderRadius: '50%',
-              margin: '0 auto 1rem auto',
-              background: user?.profile_pic_url 
-                ? 'transparent' 
-                : 'linear-gradient(135deg,#3b82f6,#8b5cf6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: '1.6rem',
-              fontWeight: '800',
-              overflow: 'hidden',
-              border: '2px solid rgba(255,255,255,0.1)'
-            }}
-          >
-            {user?.profile_pic_url ? (
-              <img 
-                src={(user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
-                alt="Profile" 
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-              />
-            ) : (
-              user?.first_name
-                ? user.first_name[0].toUpperCase()
-                : user?.username?.[0]?.toUpperCase()
-            )}
-          </div>
-
-          <h3
-            style={{
-              color: '#fff',
-              marginBottom: '.3rem'
-            }}
-          >
-            {user?.first_name ||
-              user?.username}
-          </h3>
-
-          <p
-            style={{
-              color: '#94a3b8',
-              fontSize: '.85rem'
-            }}
-          >
-            Student Account
-          </p>
+        <div style={{ marginBottom: '3rem', padding: '0 1rem' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: '900', letterSpacing: '-1px' }}>
+            CODE<span style={{ color: 'var(--accent-secondary)' }}>BABY</span>
+          </h1>
         </div>
 
-        {/* Nav */}
-        <nav
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '.7rem'
-          }}
-        >
-          <Link
-            to="/student"
-            onClick={() => setMobileMenu(false)}
-            style={{
-              padding: '.7rem 0',
-              textDecoration: 'none',
-              fontWeight: '600',
-              fontSize: '0.95rem',
-              color: location.pathname === '/student' ? '#fff' : '#b3b3b3',
-              borderLeft: location.pathname === '/student' ? '4px solid #e50914' : '4px solid transparent',
-              paddingLeft: '1rem',
-              transition: '0.2s'
-            }}
-          >
-            Home
-          </Link>
+        <div style={{ marginBottom: '3rem', padding: '0 1rem' }}>
+          <div style={{ position: 'relative', width: '80px', height: '80px', marginBottom: '1.2rem' }}>
+            <div style={{ width: '100%', height: '100%', borderRadius: '24px', background: 'linear-gradient(135deg, #222, #111)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
+              {user?.profile_pic_url ? (
+                <img
+                  src={(user.profile_pic_url.startsWith('http') || user.profile_pic_url.startsWith('data:')) ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`}
+                  alt="Profile"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span style={{ fontSize: '2rem', fontWeight: '800' }}>{user?.username?.[0].toUpperCase()}</span>
+              )}
+            </div>
+            <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', width: '20px', height: '20px', background: '#10b981', border: '3px solid var(--bg-secondary)', borderRadius: '50%' }}></div>
+          </div>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.2rem' }}>{user?.first_name || user?.username}</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Premium Student</p>
+        </div>
 
-          <Link
-            to="/student/profile"
-            onClick={() => setMobileMenu(false)}
-            style={{
-              padding: '.7rem 0',
-              textDecoration: 'none',
-              fontWeight: '600',
-              fontSize: '0.95rem',
-              color: location.pathname === '/student/profile' ? '#fff' : '#b3b3b3',
-              borderLeft: location.pathname === '/student/profile' ? '4px solid #e50914' : '4px solid transparent',
-              paddingLeft: '1rem',
-              transition: '0.2s'
-            }}
-          >
-            Profile Settings
-          </Link>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <SidebarLink to="/student" active={location.pathname === '/student'} label="Dashboard" icon="🏠" onClick={() => setMobileMenu(false)} />
+          <SidebarLink to="/student/profile" active={location.pathname === '/student/profile'} label="Settings" icon="⚙️" onClick={() => setMobileMenu(false)} />
         </nav>
 
-        {/* Logout */}
         <button
           onClick={handleLogout}
           style={{
             marginTop: 'auto',
-            border: 'none',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
             padding: '1rem',
-            borderRadius: '14px',
-            background:
-              'linear-gradient(135deg,#ef4444,#dc2626)',
-            color: '#fff',
+            borderRadius: '16px',
+            background: 'rgba(239, 68, 68, 0.05)',
+            color: '#ef4444',
             fontWeight: '700',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: '0.3s'
           }}
+          onMouseOver={(e) => { e.target.style.background = '#ef4444'; e.target.style.color = '#fff'; }}
+          onMouseOut={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.05)'; e.target.style.color = '#ef4444'; }}
         >
-          Secure Logout
+          Logout Session
         </button>
       </aside>
 
-      {/* Main */}
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0
-        }}
-      >
-        {/* Topbar */}
-        <div
-          style={{
-            padding: '1.1rem 1.5rem',
-            borderBottom:
-              '1px solid rgba(255,255,255,.06)',
-            display: 'flex',
-            justifyContent:
-              'space-between',
-            alignItems: 'center'
-          }}
-        >
-          <div>
-            <h2
-              style={{
-                color: '#fff',
-                fontSize: '1.25rem',
-                fontWeight: '800'
-              }}
+      {/* Main Container */}
+      <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
+        <header style={{ position: 'sticky', top: 0, zIndex: 100, padding: '1.2rem 2rem', background: 'rgba(5, 5, 5, 0.8)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            {location.pathname === '/student' ? 'Overview' : 'Profile Settings'}
+          </h2>
+
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>🔔</div>
+            <button
+              onClick={() => setMobileMenu(!mobileMenu)}
+              style={{ display: isMobile ? 'block' : 'none', border: 'none', padding: '0.6rem', borderRadius: '10px', background: 'var(--bg-surface)', color: '#fff', cursor: 'pointer' }}
             >
-              CodeBaby Learning Portal
-            </h2>
+              ☰
+            </button>
           </div>
+        </header>
 
-          <button
-            onClick={() =>
-              setMobileMenu(
-                !mobileMenu
-              )
-            }
-            style={{
-              display:
-                window.innerWidth <
-                  900
-                  ? 'block'
-                  : 'none',
-              border: 'none',
-              padding:
-                '.7rem 1rem',
-              borderRadius:
-                '12px',
-              background:
-                'rgba(255,255,255,.08)',
-              color: '#fff',
-              cursor: 'pointer'
-            }}
-          >
-            ☰
-          </button>
-        </div>
-
-        <main
-          style={{
-            padding: '1.5rem'
-          }}
-        >
+        <main style={{ padding: isMobile ? '1.5rem' : '2rem 3rem' }}>
           <Routes>
-            <Route
-              path="/"
-              element={
-                <StudentLibrary />
-              }
-            />
-
-            <Route
-              path="/courses/:courseId"
-              element={
-                <CourseViewer />
-              }
-            />
-
-            <Route
-              path="/profile"
-              element={
-                <ProfileSettings />
-              }
-            />
+            <Route path="/" element={<StudentLibrary user={user} courses={courses} analytics={analytics} loading={loading} />} />
+            <Route path="/courses/:courseId" element={<CourseViewer />} />
+            <Route path="/profile" element={<ProfileSettings />} />
           </Routes>
         </main>
       </div>
-    </div>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  color
-}) {
-  return (
-    <div
-      style={{
-        background:
-          'rgba(255,255,255,0.08)',
-        backdropFilter:
-          'blur(18px)',
-        border:
-          '1px solid rgba(255,255,255,0.08)',
-        borderRadius:
-          '22px',
-        padding: '1.25rem'
-      }}
-    >
-      <div
-        style={{
-          width: '42px',
-          height: '4px',
-          borderRadius:
-            '999px',
-          background: color,
-          marginBottom:
-            '1rem'
-        }}
-      />
-
-      <h2
-        style={{
-          color: '#fff',
-          fontSize: '2rem',
-          marginBottom:
-            '.3rem'
-        }}
-      >
-        {value}
-      </h2>
-
-      <p
-        style={{
-          color: '#94a3b8',
-          fontSize: '.85rem',
-          textTransform:
-            'uppercase',
-          letterSpacing:
-            '1px',
-          fontWeight:
-            '700'
-        }}
-      >
-        {title}
-      </p>
     </div>
   );
 }
