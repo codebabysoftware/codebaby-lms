@@ -143,22 +143,66 @@ export default function AdminDashboard() {
               padding: '1rem',
               borderRadius: '14px',
               background: 'rgba(255,255,255,0.04)',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem'
             }}
           >
-            <p
+            <div
               style={{
-                color: '#94a3b8',
-                fontSize: '.8rem',
-                marginBottom: '.35rem'
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: user?.profile_pic_url 
+                  ? 'transparent' 
+                  : 'linear-gradient(135deg,#3b82f6,#8b5cf6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: '1rem',
+                fontWeight: '800',
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.1)',
+                flexShrink: 0
               }}
             >
-              Logged in as
-            </p>
+              {user?.profile_pic_url ? (
+                <img 
+                  src={user.profile_pic_url.startsWith('http') ? user.profile_pic_url : `${import.meta.env.VITE_API_URL}${user.profile_pic_url}`} 
+                  alt="Admin" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+              ) : (
+                user?.username?.[0]?.toUpperCase() || 'A'
+              )}
+            </div>
 
-            <strong style={{ color: '#fff', fontSize: '.95rem' }}>
-              {user?.username || 'Admin'}
-            </strong>
+            <div style={{ minWidth: 0 }}>
+              <p
+                style={{
+                  color: '#94a3b8',
+                  fontSize: '.75rem',
+                  marginBottom: '.1rem'
+                }}
+              >
+                Logged in as
+              </p>
+
+              <strong 
+                style={{ 
+                  color: '#fff', 
+                  fontSize: '.9rem',
+                  display: 'block',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {user?.username || 'Admin'}
+              </strong>
+            </div>
           </div>
 
           <button
@@ -256,5 +300,6 @@ export default function AdminDashboard() {
         </main>
       </div>
     </div>
+
   );
 }

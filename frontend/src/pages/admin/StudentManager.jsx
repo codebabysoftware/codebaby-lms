@@ -1,500 +1,553 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
+
+const API = "http://localhost:8000/api";
 
 export default function StudentManager() {
+  const token = localStorage.getItem("access_token");
+
   const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
   const [analytics, setAnalytics] = useState({
     total_students: 0,
-    active_students: 0,
+    active_students_last_7_days: 0,
+    verified_students: 0,
+    inactive_students: 0,
     total_enrollments: 0,
-    total_lesson_unlocks: 0
+    total_lesson_unlocks: 0,
   });
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+    phone: "",
+    student_id: "",
+    department: "",
+    course: "",
+    year: "",
+    city: "",
+    state: "",
+    country: "India",
+  });
 
   useEffect(() => {
-    fetchData();
+    fetchAll();
   }, []);
 
-  const authHeader = {
-    Authorization: `Bearer ${localStorage.getItem('access_token')}`
+  const authHeaders = {
+    Authorization: `Bearer ${token}`,
   };
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     try {
-      const statsRes = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/admin/analytics/`,
-        { headers: authHeader }
-      );
+      setPageLoading(true);
 
-      if (statsRes.ok) {
-        setAnalytics(await statsRes.json());
+      const [analyticsRes, studentsRes] = await Promise.all([
+        fetch(`${API}/admin/analytics/`, {
+          headers: authHeaders,
+        }),
+        fetch(`${API}/admin/students/`, {
+          headers: authHeaders,
+        }),
+      ]);
+
+      if (analyticsRes.ok) {
+        const data = await analyticsRes.json();
+        setAnalytics(data);
       }
-
-      const studentsRes = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/admin/students/`,
-        { headers: authHeader }
-      );
 
       if (studentsRes.ok) {
-        setStudents(await studentsRes.json());
+        const data = await studentsRes.json();
+        setStudents(data);
       }
-    } catch { }
+    } catch (error) {
+      setMessage("Failed to load data.");
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const resetForm = () => {
+    setForm({
+      username: "",
+      email: "",
+      password: "",
+      first_name: "",
+      last_name: "",
+      phone: "",
+      student_id: "",
+      department: "",
+      course: "",
+      year: "",
+      city: "",
+      state: "",
+      country: "India",
+    });
   };
 
   const handleCreateStudent = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
-    setMessage('');
-
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/admin/students/create/`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...authHeader
-          },
-          body: JSON.stringify({
-            username,
-            password,
-            first_name: firstName,
-            last_name: lastName
-          })
-        }
-      );
+      setLoading(true);
+      setMessage("");
+
+      const res = await fetch(`${API}/admin/students/create/`, {
+        method: "POST",
+        headers: {
+          ...authHeaders,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
 
       if (res.ok) {
-        setMessage('Student successfully created!');
-        setUsername('');
-        setPassword('');
-        setFirstName('');
-        setLastName('');
-        fetchData();
+        setMessage("Student created successfully.");
+        resetForm();
+        fetchAll();
       } else {
-        const errData = await res.json();
-        setMessage(
-          'Creation Failed: ' +
-          JSON.stringify(errData)
-        );
+        setMessage(JSON.stringify(data));
       }
-    } catch {
-      setMessage('Network error.');
+    } catch (error) {
+      setMessage("Network error.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (
-      !window.confirm(
-        `Delete student "${name}"? This will permanently remove all data and access records.`
-      )
-    ) {
-      return;
-    }
+  const handleDelete = async (id, username) => {
+    const ok = window.confirm(
+      `Delete student "${username}" permanently?`
+    );
+
+    if (!ok) return;
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/admin/students/${id}/delete/`,
+        `${API}/admin/students/${id}/delete/`,
         {
-          method: 'DELETE',
-          headers: authHeader
+          method: "DELETE",
+          headers: authHeaders,
         }
       );
 
       if (res.ok) {
-        setMessage(`Student "${name}" deleted.`);
-        fetchData();
+        setMessage("Student deleted.");
+        fetchAll();
       } else {
-        setMessage('Failed to delete student.');
+        setMessage("Delete failed.");
       }
     } catch {
-      setMessage('Network error during deletion.');
+      setMessage("Network error.");
     }
   };
 
-  const glassCard = {
-    background: 'rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(18px)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '22px',
-    padding: '1.5rem',
-    boxShadow: '0 20px 45px rgba(0,0,0,0.18)'
+  const handleVerify = async (id) => {
+    try {
+      const res = await fetch(
+        `${API}/admin/students/${id}/verify/`,
+        {
+          method: "PATCH",
+          headers: authHeaders,
+        }
+      );
+
+      if (res.ok) {
+        fetchAll();
+      }
+    } catch { }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '1rem',
-    borderRadius: '14px',
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.04)',
-    color: '#fff',
-    outline: 'none',
-    fontSize: '.95rem'
-  };
-
-  const labelStyle = {
-    display: 'block',
-    marginBottom: '.45rem',
-    color: '#e2e8f0',
-    fontSize: '.9rem',
-    fontWeight: '600'
-  };
-
-  const btnPrimary = {
-    border: 'none',
-    padding: '1rem 1.2rem',
-    borderRadius: '14px',
-    background:
-      'linear-gradient(135deg,#3b82f6,#8b5cf6)',
-    color: '#fff',
-    fontWeight: '700',
-    cursor: 'pointer'
-  };
+  if (pageLoading) {
+    return (
+      <div style={{ padding: "2rem", color: "white" }}>
+        Loading dashboard...
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: '1rem' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1
-          style={{
-            color: '#fff',
-            fontSize: '2rem',
-            fontWeight: '800',
-            marginBottom: '.35rem'
-          }}
-        >
-          Student Management
-        </h1>
-
-        <p style={{ color: '#94a3b8' }}>
-          Manage students, registrations and access.
-        </p>
-      </div>
-
-      {/* Analytics */}
+    <div style={{ marginTop: "2rem" }}>
+      {/* ANALYTICS */}
       <div
         style={{
-          display: 'grid',
+          display: "grid",
           gridTemplateColumns:
-            'repeat(auto-fit,minmax(220px,1fr))',
-          gap: '1rem',
-          marginBottom: '1.5rem'
+            "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "1rem",
+          marginBottom: "2rem",
         }}
       >
-        <StatCard
-          title="Students"
+        <Card
+          title="Total Students"
           value={analytics.total_students}
-          color="#3b82f6"
-          style={glassCard}
         />
-
-        <StatCard
-          title="Active Users"
-          value={analytics.active_students}
-          color="#8b5cf6"
-          style={glassCard}
+        <Card
+          title="Active (7 Days)"
+          value={analytics.active_students_last_7_days}
         />
-
-        <StatCard
+        <Card
+          title="Verified"
+          value={analytics.verified_students}
+        />
+        <Card
           title="Enrollments"
           value={analytics.total_enrollments}
-          color="#f59e0b"
-          style={glassCard}
         />
-
-        <StatCard
-          title="Lessons Unlocked"
+        <Card
+          title="Lesson Unlocks"
           value={analytics.total_lesson_unlocks}
-          color="#10b981"
-          style={glassCard}
         />
       </div>
 
-      {/* Main Grid */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns:
-            'repeat(auto-fit,minmax(360px,1fr))',
-          gap: '1.5rem'
+          display: "flex",
+          gap: "2rem",
+          flexWrap: "wrap",
         }}
       >
-        {/* Create Student */}
-        <div style={glassCard}>
-          <h3
-            style={{
-              color: '#fff',
-              marginBottom: '1.2rem'
-            }}
-          >
-            Create Student ID
+        {/* CREATE FORM */}
+        <div
+          className="glass-panel"
+          style={{
+            flex: 1,
+            minWidth: "360px",
+            padding: "1.5rem",
+          }}
+        >
+          <h3 style={{ marginBottom: "1rem" }}>
+            Create Student
           </h3>
 
           <form onSubmit={handleCreateStudent}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={labelStyle}>
-                Username / ID
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) =>
-                  setUsername(e.target.value)
-                }
-                required
-                style={inputStyle}
+            <Input
+              label="Username"
+              name="username"
+              value={form.username}
+              onChange={handleChange}
+              required
+            />
+
+            <Input
+              label="Email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+            />
+
+            <Input
+              label="Password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+
+            <Row>
+              <Input
+                label="First Name"
+                name="first_name"
+                value={form.first_name}
+                onChange={handleChange}
               />
-            </div>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={labelStyle}>
-                Temporary Password
-              </label>
-              <input
-                type="text"
-                value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
-                required
-                style={inputStyle}
+              <Input
+                label="Last Name"
+                name="last_name"
+                value={form.last_name}
+                onChange={handleChange}
               />
-            </div>
+            </Row>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns:
-                  'repeat(auto-fit,minmax(140px,1fr))',
-                gap: '1rem',
-                marginBottom: '1rem'
-              }}
-            >
-              <div>
-                <label style={labelStyle}>
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) =>
-                    setFirstName(e.target.value)
-                  }
-                  style={inputStyle}
-                />
-              </div>
+            <Row>
+              <Input
+                label="Phone"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+              />
+              <Input
+                label="Student ID"
+                name="student_id"
+                value={form.student_id}
+                onChange={handleChange}
+              />
+            </Row>
 
-              <div>
-                <label style={labelStyle}>
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) =>
-                    setLastName(e.target.value)
-                  }
-                  style={inputStyle}
-                />
-              </div>
-            </div>
+            <Row>
+              <Input
+                label="Department"
+                name="department"
+                value={form.department}
+                onChange={handleChange}
+              />
+              <Input
+                label="Course"
+                name="course"
+                value={form.course}
+                onChange={handleChange}
+              />
+            </Row>
+
+            <Row>
+              <Input
+                label="Year"
+                name="year"
+                value={form.year}
+                onChange={handleChange}
+              />
+              <Input
+                label="City"
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+              />
+            </Row>
+
+            <Row>
+              <Input
+                label="State"
+                name="state"
+                value={form.state}
+                onChange={handleChange}
+              />
+              <Input
+                label="Country"
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+              />
+            </Row>
 
             <button
               type="submit"
+              className="btn-primary"
               disabled={loading}
-              style={btnPrimary}
             >
               {loading
-                ? 'Processing...'
-                : 'Register Student'}
+                ? "Creating..."
+                : "Create Student"}
             </button>
 
             {message && (
-              <div
-                style={{
-                  marginTop: '1rem',
-                  color:
-                    message
-                      .toLowerCase()
-                      .includes(
-                        'successfully'
-                      ) ||
-                      message
-                        .toLowerCase()
-                        .includes('deleted')
-                      ? '#10b981'
-                      : '#f87171',
-                  fontWeight: '600'
-                }}
-              >
-                {message}
-              </div>
+              <p style={{ marginTop: "1rem" }}>{message}</p>
             )}
           </form>
         </div>
 
-        {/* Student List */}
-        <div style={glassCard}>
-          <h3
-            style={{
-              color: '#fff',
-              marginBottom: '1.2rem'
-            }}
-          >
-            Student Roster
+        {/* TABLE */}
+        <div
+          className="glass-panel"
+          style={{
+            flex: 2,
+            minWidth: "650px",
+            padding: "1.5rem",
+            overflowX: "auto",
+          }}
+        >
+          <h3 style={{ marginBottom: "1rem" }}>
+            Student List
           </h3>
 
-          {students.length === 0 ? (
-            <div
-              style={{
-                color: '#94a3b8',
-                padding: '1rem 0'
-              }}
-            >
-              No students registered.
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '.9rem',
-                maxHeight: '700px',
-                overflowY: 'auto',
-                paddingRight: '.25rem'
-              }}
-            >
-              {students.map((student) => (
-                <div
-                  key={student.id}
-                  style={{
-                    padding: '1rem',
-                    borderRadius: '16px',
-                    background:
-                      'rgba(255,255,255,0.04)',
-                    border:
-                      '1px solid rgba(255,255,255,0.06)',
-                    display: 'flex',
-                    justifyContent:
-                      'space-between',
-                    gap: '1rem',
-                    flexWrap: 'wrap',
-                    alignItems: 'center'
-                  }}
-                >
-                  <div>
-                    <h4
-                      style={{
-                        color: '#fff',
-                        marginBottom: '.25rem'
-                      }}
-                    >
-                      {student.username}
-                    </h4>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+            }}
+          >
+            <thead>
+              <tr>
+                <TH>User</TH>
+                <TH>Name</TH>
+                <TH>Student ID</TH>
+                <TH>Department</TH>
+                <TH>Verified</TH>
+                <TH>Action</TH>
+              </tr>
+            </thead>
 
-                    <p
-                      style={{
-                        color: '#cbd5e1',
-                        fontSize: '.9rem'
-                      }}
-                    >
-                      {student.first_name}{' '}
-                      {student.last_name}
-                    </p>
-
-                    <span
-                      style={{
-                        color: '#64748b',
-                        fontSize: '.8rem'
-                      }}
-                    >
-                      {student.last_login
-                        ? new Date(
-                          student.last_login
-                        ).toLocaleString()
-                        : 'Never Logged In'}
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      handleDelete(
-                        student.id,
-                        student.username
-                      )
-                    }
+            <tbody>
+              {students.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="6"
                     style={{
-                      border: 'none',
-                      padding:
-                        '.8rem 1rem',
-                      borderRadius: '12px',
-                      background:
-                        'linear-gradient(135deg,#ef4444,#dc2626)',
-                      color: '#fff',
-                      fontWeight: '700',
-                      cursor: 'pointer'
+                      padding: "1rem",
+                      textAlign: "center",
                     }}
                   >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                    No students found.
+                  </td>
+                </tr>
+              ) : (
+                students.map((student) => (
+                  <tr
+                    key={student.id}
+                    style={{
+                      borderTop:
+                        "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <TD>{student.username}</TD>
+                    <TD>
+                      {student.first_name}{" "}
+                      {student.last_name}
+                    </TD>
+                    <TD>{student.student_id}</TD>
+                    <TD>{student.department}</TD>
+                    <TD>
+                      {student.is_verified
+                        ? "✅ Yes"
+                        : "❌ No"}
+                    </TD>
+                    <TD>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: ".5rem",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <button
+                          className="btn-primary"
+                          style={{
+                            width: "auto",
+                            padding:
+                              ".45rem .75rem",
+                          }}
+                          onClick={() =>
+                            handleVerify(student.id)
+                          }
+                        >
+                          Verify
+                        </button>
+
+                        <button
+                          className="btn-primary"
+                          style={{
+                            width: "auto",
+                            padding:
+                              ".45rem .75rem",
+                            background:
+                              "var(--danger-color)",
+                          }}
+                          onClick={() =>
+                            handleDelete(
+                              student.id,
+                              student.username
+                            )
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </TD>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
 
-function StatCard({
-  title,
+/* COMPONENTS */
+
+function Card({ title, value }) {
+  return (
+    <div
+      className="glass-panel"
+      style={{
+        padding: "1.25rem",
+        textAlign: "center",
+      }}
+    >
+      <h2 style={{ fontSize: "2rem" }}>{value}</h2>
+      <p>{title}</p>
+    </div>
+  );
+}
+
+function Input({
+  label,
+  name,
   value,
-  color,
-  style
+  onChange,
+  required,
 }) {
   return (
-    <div style={style}>
-      <div
+    <div style={{ marginBottom: "1rem", flex: 1 }}>
+      <label
         style={{
-          width: '42px',
-          height: '4px',
-          borderRadius: '10px',
-          background: color,
-          marginBottom: '1rem'
+          display: "block",
+          marginBottom: ".45rem",
         }}
+      >
+        {label}
+      </label>
+
+      <input
+        className="input-field"
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
       />
-
-      <h2
-        style={{
-          color: '#fff',
-          fontSize: '2rem',
-          marginBottom: '.35rem'
-        }}
-      >
-        {value}
-      </h2>
-
-      <p
-        style={{
-          color: '#94a3b8',
-          fontSize: '.85rem',
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-          fontWeight: '700'
-        }}
-      >
-        {title}
-      </p>
     </div>
+  );
+}
+
+function Row({ children }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "1rem",
+        flexWrap: "wrap",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function TH({ children }) {
+  return (
+    <th
+      style={{
+        textAlign: "left",
+        padding: ".75rem",
+      }}
+    >
+      {children}
+    </th>
+  );
+}
+
+function TD({ children }) {
+  return (
+    <td
+      style={{
+        padding: ".75rem",
+      }}
+    >
+      {children}
+    </td>
   );
 }
