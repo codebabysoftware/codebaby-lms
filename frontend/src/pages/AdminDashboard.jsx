@@ -1,6 +1,7 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, BookOpen, ShieldCheck, LogOut, Menu, X } from 'lucide-react';
 
 import AdminHome from './admin/AdminHome';
 import CourseList from './admin/CourseList';
@@ -15,6 +16,21 @@ export default function AdminDashboard() {
   const location = useLocation();
 
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      if (window.innerWidth >= 900) {
+        setMobileMenu(false); // Close mobile menu when expanding to desktop
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth < 900;
 
   const handleLogout = () => {
     logout();
@@ -22,10 +38,10 @@ export default function AdminDashboard() {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/admin' },
-    { name: 'Students', path: '/admin/students' },
-    { name: 'Courses', path: '/admin/courses' },
-    { name: 'Access Manager', path: '/admin/access' }
+    { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+    { name: 'Students', path: '/admin/students', icon: Users },
+    { name: 'Courses', path: '/admin/courses', icon: BookOpen },
+    { name: 'Access Manager', path: '/admin/access', icon: ShieldCheck }
   ];
 
   return (
@@ -33,73 +49,119 @@ export default function AdminDashboard() {
       style={{
         minHeight: '100vh',
         display: 'flex',
-        background:
-          'linear-gradient(135deg,#0f172a 0%, #111827 45%, #1e293b 100%)'
+        background: 'linear-gradient(135deg,#0f172a 0%, #111827 45%, #1e293b 100%)',
+        position: 'relative'
       }}
     >
+      {/* Mobile Backdrop Overlay */}
+      {isMobile && mobileMenu && (
+        <div
+          onClick={() => setMobileMenu(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 999,
+            animation: 'slideUpFadeIn 0.3s ease'
+          }}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         style={{
-          width: mobileMenu ? '260px' : '260px',
-          maxWidth: '100%',
-          background: 'rgba(255,255,255,0.08)',
+          width: '280px',
+          background: 'rgba(255,255,255,0.03)',
           backdropFilter: 'blur(16px)',
           borderRight: '1px solid rgba(255,255,255,0.08)',
-          padding: '1.5rem',
-          display: window.innerWidth < 900 ? (mobileMenu ? 'flex' : 'none') : 'flex',
+          padding: '1.75rem 1.5rem',
+          display: 'flex',
           flexDirection: 'column',
-          position: window.innerWidth < 900 ? 'fixed' : 'relative',
+          position: isMobile ? 'fixed' : 'relative',
           height: '100vh',
           zIndex: 1000,
           left: 0,
-          top: 0
+          top: 0,
+          transform: isMobile ? (mobileMenu ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+          transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: (isMobile && mobileMenu) ? '4px 0 24px rgba(0,0,0,0.5)' : 'none'
         }}
       >
         {/* Branding */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: '#fff',
-              overflow: 'hidden',
-              marginBottom: '1rem'
-            }}
-          >
-            <img
-              src="logo.png"
-              alt="CodeBaby"
+        <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <div
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                justifyContent: 'center',
-                alignItems: 'center',
-                padding: '6px'
+                width: '60px',
+                height: '60px',
+                borderRadius: '16px',
+                background: '#fff',
+                overflow: 'hidden',
+                marginBottom: '1rem',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
               }}
-            />
+            >
+              <img
+                src="logo.png"
+                alt="CodeBaby"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  padding: '8px'
+                }}
+              />
+            </div>
+
+            <h2
+              style={{
+                color: '#fff',
+                fontSize: '1.4rem',
+                marginBottom: '.3rem',
+                fontWeight: '800',
+                letterSpacing: '-0.5px'
+              }}
+            >
+              CodeBaby Admin
+            </h2>
+
+            <p
+              style={{
+                color: '#94a3b8',
+                fontSize: '.85rem',
+                letterSpacing: '0.5px',
+                textTransform: 'uppercase',
+                fontWeight: 600
+              }}
+            >
+              Learn • Build • Grow
+            </p>
           </div>
 
-          <h2
-            style={{
-              color: '#fff',
-              fontSize: '1.3rem',
-              marginBottom: '.3rem',
-              fontWeight: '800'
-            }}
-          >
-            CodeBaby Admin
-          </h2>
-
-          <p
-            style={{
-              color: '#94a3b8',
-              fontSize: '.85rem'
-            }}
-          >
-            Learn • Build • Grow
-          </p>
+          {/* Close button for mobile sidebar */}
+          {isMobile && (
+            <button
+              onClick={() => setMobileMenu(false)}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: '#fff',
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         {/* Nav */}
@@ -107,11 +169,12 @@ export default function AdminDashboard() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '.7rem'
+            gap: '.5rem'
           }}
         >
           {navItems.map((item) => {
-            const active = location.pathname === item.path;
+            const active = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
+            const Icon = item.icon;
 
             return (
               <Link
@@ -120,16 +183,33 @@ export default function AdminDashboard() {
                 onClick={() => setMobileMenu(false)}
                 style={{
                   textDecoration: 'none',
-                  padding: '.95rem 1rem',
+                  padding: '1rem 1.25rem',
                   borderRadius: '14px',
                   color: active ? '#fff' : '#cbd5e1',
                   background: active
                     ? 'linear-gradient(135deg,#3b82f6,#8b5cf6)'
-                    : 'rgba(255,255,255,0.03)',
-                  fontWeight: active ? '700' : '500',
-                  transition: '0.3s ease'
+                    : 'transparent',
+                  fontWeight: active ? '600' : '500',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  boxShadow: active ? '0 8px 20px rgba(59, 130, 246, 0.3)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.color = '#fff';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#cbd5e1';
+                  }
                 }}
               >
+                <Icon size={20} strokeWidth={active ? 2.5 : 2} style={{ opacity: active ? 1 : 0.7 }} />
                 {item.name}
               </Link>
             );
@@ -141,18 +221,22 @@ export default function AdminDashboard() {
           <div
             style={{
               padding: '1rem',
-              borderRadius: '14px',
-              background: 'rgba(255,255,255,0.04)',
+              borderRadius: '16px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.05)',
               marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem'
+              gap: '1rem',
+              transition: 'background 0.3s',
             }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
           >
             <div
               style={{
-                width: '40px',
-                height: '40px',
+                width: '44px',
+                height: '44px',
                 borderRadius: '50%',
                 background: user?.profile_pic_url 
                   ? 'transparent' 
@@ -161,10 +245,10 @@ export default function AdminDashboard() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fff',
-                fontSize: '1rem',
+                fontSize: '1.1rem',
                 fontWeight: '800',
                 overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '2px solid rgba(255,255,255,0.1)',
                 flexShrink: 0
               }}
             >
@@ -184,7 +268,9 @@ export default function AdminDashboard() {
                 style={{
                   color: '#94a3b8',
                   fontSize: '.75rem',
-                  marginBottom: '.1rem'
+                  marginBottom: '.1rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}
               >
                 Logged in as
@@ -193,7 +279,7 @@ export default function AdminDashboard() {
               <strong 
                 style={{ 
                   color: '#fff', 
-                  fontSize: '.9rem',
+                  fontSize: '.95rem',
                   display: 'block',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -209,15 +295,31 @@ export default function AdminDashboard() {
             onClick={handleLogout}
             style={{
               width: '100%',
-              border: 'none',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
               padding: '1rem',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg,#ef4444,#dc2626)',
-              color: '#fff',
-              fontWeight: '700',
-              cursor: 'pointer'
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#ef4444',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+              e.currentTarget.style.color = '#fff';
+              e.currentTarget.style.borderColor = 'transparent';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+              e.currentTarget.style.color = '#ef4444';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
             }}
           >
+            <LogOut size={18} />
             Log Out
           </button>
         </div>
@@ -227,19 +329,26 @@ export default function AdminDashboard() {
       <div
         style={{
           flex: 1,
-          minWidth: 0
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          overflowY: 'auto'
         }}
       >
         {/* Topbar */}
         <div
+          className="premium-glass"
           style={{
-            padding: '1.2rem 1.5rem',
+            padding: '1rem 2rem',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
+            borderLeft: 'none',
+            borderRight: 'none',
+            borderTop: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'rgba(255,255,255,0.02)',
-            backdropFilter: 'blur(12px)',
+            background: 'rgba(15, 23, 42, 0.7)',
             position: 'sticky',
             top: 0,
             zIndex: 50
@@ -249,8 +358,9 @@ export default function AdminDashboard() {
             <h1
               style={{
                 color: '#fff',
-                fontSize: '1.35rem',
-                fontWeight: '800'
+                fontSize: '1.5rem',
+                fontWeight: '800',
+                letterSpacing: '-0.5px'
               }}
             >
               Welcome back, Admin
@@ -259,7 +369,8 @@ export default function AdminDashboard() {
             <p
               style={{
                 color: '#94a3b8',
-                fontSize: '.85rem'
+                fontSize: '.9rem',
+                marginTop: '4px'
               }}
             >
               Manage students, courses and access controls
@@ -267,26 +378,34 @@ export default function AdminDashboard() {
           </div>
 
           {/* Mobile Menu */}
-          <button
-            onClick={() => setMobileMenu(!mobileMenu)}
-            style={{
-              display: window.innerWidth < 900 ? 'block' : 'none',
-              border: 'none',
-              background: 'rgba(255,255,255,0.08)',
-              color: '#fff',
-              padding: '.7rem 1rem',
-              borderRadius: '12px',
-              cursor: 'pointer'
-            }}
-          >
-            ☰
-          </button>
+          {isMobile && (
+            <button
+              onClick={() => setMobileMenu(true)}
+              style={{
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                padding: '0.6rem',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            >
+              <Menu size={24} />
+            </button>
+          )}
         </div>
 
         {/* Page Content */}
         <main
           style={{
-            padding: '1.5rem'
+            padding: isMobile ? '1rem' : '2rem',
+            flex: 1
           }}
         >
           <Routes>
@@ -300,6 +419,5 @@ export default function AdminDashboard() {
         </main>
       </div>
     </div>
-
   );
 }
